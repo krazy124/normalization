@@ -71,13 +71,41 @@ df["order_date"] = converted.where(
 # =========================
 # Missing Values
 # =========================
-# Detects missing values.
-df.isna()
-# Counts missing values per column
-df.isna().sum()
-# Fill missing values in column_name with "Unknown"
-df["column_name"] = df["column_name"].fillna("Unknown")
 
+# ====== entire dataframe =======
+# Counts missing values in every column
+missing_counts = df.isna().sum()
+# Returns a boolean dataframe indicating where values are missing
+missing_mask = df.isna()
+# Identify rows with missing values in any column
+missing_rows = df[df.isna().any(axis=1)]
+# Replace missing values across the entire dataframe with "Unknown"
+df = df.fillna("Unknown")
+
+# ====== per column =======
+# Count missing values in column_name
+missing_count = df["column_name"].isna().sum()
+# Identify rows with missing values in column_name
 missing_rows = df[df["column_name"].isna()]
+
+# ======= Preview Changes =======
+# Create a preview dataframe to show proposed changes without
+# modifying the original working dataframe
 preview_df = df.copy()
+
+# Count missing values before filling
+before_missing = df["column_name"].isna().sum()
+
+# Fill missing values in column_name of the preview dataframe with
+# "Unknown" for review before applying to the working dataframe
 preview_df["column_name"] = preview_df["column_name"].fillna("Unknown")
+
+# Count missing values after filling in the preview dataframe
+after_missing = preview_df["column_name"].isna().sum()
+
+
+# ======= Apply Changes =======
+# Fill missing values in column_name after preview/review
+df["column_name"] = df["column_name"].fillna("Unknown")
+# Alternatively, create a new column to flag missing values instead of filling them
+df["category_missing_flag"] = df["category"].isna()
