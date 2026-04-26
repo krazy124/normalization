@@ -73,6 +73,7 @@ df["order_date"] = converted.where(
 # =========================
 
 # ====== entire dataframe =======
+
 # Counts missing values in every column
 missing_counts = df.isna().sum()
 # Returns a boolean dataframe indicating where values are missing
@@ -109,3 +110,25 @@ after_missing = preview_df["column_name"].isna().sum()
 df["column_name"] = df["column_name"].fillna("Unknown")
 # Alternatively, create a new column to flag missing values instead of filling them
 df["category_missing_flag"] = df["category"].isna()
+
+
+# =========================
+# Data Health Summary
+# =========================
+
+# Total rows and columns
+row_count = len(df)
+column_count = len(df.columns)
+
+# Count duplicate rows
+duplicate_count = df.duplicated().sum()
+
+# Count total missing values
+total_missing = df.isna().sum().sum()
+
+# Missing values by column
+missing_by_column = df.isna().sum()
+
+# Percent of rows with at least one missing value
+rows_with_missing = df[df.isna().any(axis=1)]
+missing_row_percent = len(rows_with_missing) / len(df) * 100
