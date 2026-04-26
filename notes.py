@@ -31,10 +31,6 @@ df = df.apply(lambda col: col.str.lower()
 duplicate_rows = df[df.duplicated()]
 # drop duplicate rows and return cleaned dataframe
 df = df.drop_duplicates()
-# identify duplicate rows , then drop them and return cleaned dataframe
-duplicate_rows = df[df.duplicated()]
-df = df.drop_duplicates()
-
 
 # =========================
 # Convert to Numeric
