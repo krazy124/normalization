@@ -41,7 +41,6 @@ df = df.drop_duplicates()
 # =========================
 # Convert price column to numeric, coercing errors to NaN
 df["price"] = pd.to_numeric(df["price"], errors="coerce")
-
 # Identify rows where conversion failed (original value is not NaN but converted value is NaN)
 converted = pd.to_numeric(df["price"], errors="coerce")
 failed_rows = df[converted.isna() & df["price"].notna()]
@@ -59,7 +58,26 @@ df["price"] = pd.to_numeric(df["price"], errors="coerce").astype("Int64")
 # =========================
 # Convert order_date column to datetime, coercing errors to NaT
 df["order_date"] = pd.to_datetime(df["order_date"], errors="coerce")
-
 # Identify rows where conversion failed (original value is not NaN but converted value is NaT)
 converted = pd.to_datetime(df["order_date"], errors="coerce")
 failed_rows = df[converted.isna() & df["order_date"].notna()]
+# For rows where conversion failed, keep original value; otherwise, keep converted datetime value
+converted = pd.to_datetime(df["order_date"], errors="coerce")
+df["order_date"] = converted.where(
+    converted.notna(),
+    df["order_date"]
+)
+
+# =========================
+# Missing Values
+# =========================
+# Detects missing values.
+df.isna()
+# Counts missing values per column
+df.isna().sum()
+# Fill missing values in column_name with "Unknown"
+df["column_name"] = df["column_name"].fillna("Unknown")
+
+missing_rows = df[df["column_name"].isna()]
+preview_df = df.copy()
+preview_df["column_name"] = preview_df["column_name"].fillna("Unknown")
