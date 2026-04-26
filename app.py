@@ -17,19 +17,25 @@ def load_data():
     return pd.read_csv("file.csv")
 
 
-def strip_whitespace(df):
+def strip_whitespace(dataframe):
     return df.apply(lambda col: col.str.strip()
                     if col.dtype == 'object' else col)
 
 
-def convert_to_lowercase(df):
+def convert_to_lowercase(dataframe):
     return df.apply(lambda col: col.str.lower()
                     if col.dtype == 'object' else col)
 
 
-def return_duplicates(df):
+def return_duplicates(dataframe):
     return df[df.duplicated()]
 
 
-def drop_duplicates(df):
+def drop_duplicates(dataframe):
     return df.drop_duplicates()
+
+
+def convert_to_numeric(dataframe, column_name):
+    dataframe[column_name] = pd.to_numeric(
+        dataframe[column_name], errors="coerce")
+    return dataframe
