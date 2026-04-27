@@ -290,97 +290,122 @@ record_count = st.number_input(
 
 dirty_df = generate_dirty_data(record_count)
 
+
+# =========================
+# Active Dirty Data Frame
+# =========================
+
+if "dirty_df" not in st.session_state:
+    st.session_state.dirty_df = generate_dirty_data(record_count)
+
+if st.button("Generate New Dirty Data"):
+    st.session_state.dirty_df = generate_dirty_data(record_count)
+
 st.write("### Dirty Data")
-st.dataframe(dirty_df, use_container_width=True)
-
-
-if st.button("Convert Dirty Data to Lowercase"):
-    dirty_df = convert_to_lowercase(dirty_df)
-
-    st.write("### Lowercase Data")
-    st.dataframe(dirty_df, use_container_width=True)
-
+st.dataframe(st.session_state.dirty_df, use_container_width=True)
 # =========================
-# Function Test Buttons
+# Data Health Summary
 # =========================
 
-if st.button("Strip Whitespace"):
-    result_df = strip_whitespace(dirty_df)
-    st.write("### Strip Whitespace Result")
-    st.dataframe(result_df, use_container_width=True)
+summary = get_data_health_summary(st.session_state.dirty_df)
 
-if st.button("Convert to Lowercase"):
-    result_df = convert_to_lowercase(dirty_df)
-    st.write("### Convert to Lowercase Result")
-    st.dataframe(result_df, use_container_width=True)
+st.write("### Data Health Summary")
 
-if st.button("Return Duplicates"):
-    result_df = return_duplicates(dirty_df)
-    st.write("### Duplicate Rows")
-    st.dataframe(result_df, use_container_width=True)
+col1, col2, col3, col4, col5 = st.columns(5)
 
-if st.button("Drop Duplicates"):
-    result_df = drop_duplicates(dirty_df)
-    st.write("### Drop Duplicates Result")
-    st.dataframe(result_df, use_container_width=True)
+with col1:
+    st.metric("Rows", summary["row_count"])
 
-if st.button("Count Missing Values"):
-    result_series = count_missing_values(dirty_df)
-    st.write("### Missing Values Count")
-    st.dataframe(result_series.to_frame(
-        "missing_count"), use_container_width=True)
+with col2:
+    st.metric("Columns", summary["column_count"])
 
-if st.button("Return Missing Mask"):
-    result_df = return_missing_mask(dirty_df)
-    st.write("### Missing Value Mask")
-    st.dataframe(result_df, use_container_width=True)
+with col3:
+    st.metric("Duplicates", summary["duplicate_count"])
 
-if st.button("Return Rows with Missing Values"):
-    result_df = return_rows_with_missing_values(dirty_df)
-    st.write("### Rows with Missing Values")
-    st.dataframe(result_df, use_container_width=True)
+with col4:
+    st.metric("Missing", summary["total_missing"])
 
-if st.button("Fill Missing Values"):
-    result_df = fill_missing_values(dirty_df)
-    st.write("### Fill Missing Values Result")
-    st.dataframe(result_df, use_container_width=True)
+with col5:
+    st.metric("Missing %", f"{summary['missing_row_percent']:.2f}%")
 
-if st.button("Get Row Count"):
-    st.write("### Row Count")
-    st.write(get_row_count(dirty_df))
+missing_by_column = summary["missing_by_column"]
 
-if st.button("Get Column Count"):
-    st.write("### Column Count")
-    st.write(get_column_count(dirty_df))
+st.write("### Missing by Column")
 
-if st.button("Count Duplicate Rows"):
-    st.write("### Duplicate Row Count")
-    st.write(count_duplicate_rows(dirty_df))
+col1, col2, col3, col4, col5, col6, col7, col8, col9, col10 = st.columns(10)
 
-if st.button("Count Total Missing Values"):
-    st.write("### Total Missing Values")
-    st.write(count_total_missing_values(dirty_df))
+column_cards = [
+    ("customer_id", col1),
+    ("full_name", col2),
+    ("email", col3),
+    ("city", col4),
+    ("department", col5),
+    ("status", col6),
+    ("purchase_amount", col7),
+    ("signup_date", col8),
+    ("notes", col9),
+    ("score", col10),
+]
 
-if st.button("Get Missing Values by Column"):
-    result_series = get_missing_values_by_column(dirty_df)
-    st.write("### Missing Values by Column")
-    st.dataframe(result_series.to_frame(
-        "missing_count"), use_container_width=True)
+for column_name, column_container in column_cards:
+    with column_container:
+        st.metric(column_name, int(missing_by_column[column_name]))
 
-if st.button("Get Missing Row Percent"):
-    st.write("### Missing Row Percent")
-    st.write(get_missing_row_percent(dirty_df))
 
-if st.button("Get Data Health Summary"):
-    summary = get_data_health_summary(dirty_df)
+# =========================
+# Transformation Buttons
+# =========================
 
-    st.write("### Data Health Summary")
-    st.write(f"Row Count: {summary['row_count']}")
-    st.write(f"Column Count: {summary['column_count']}")
-    st.write(f"Duplicate Count: {summary['duplicate_count']}")
-    st.write(f"Total Missing: {summary['total_missing']}")
-    st.write(f"Missing Row Percent: {summary['missing_row_percent']:.2f}%")
-    st.dataframe(
-        summary["missing_by_column"].to_frame("missing_count"),
-        use_container_width=True
-    )
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if st.button("Strip Whitespace"):
+        st.session_state.dirty_df = strip_whitespace(st.session_state.dirty_df)
+
+    if st.button("Convert to Lowercase"):
+        st.session_state.dirty_df = convert_to_lowercase(
+            st.session_state.dirty_df)
+
+with col2:
+
+    if st.button("Count Missing Values"):
+        st.write("### Missing Values Count")
+        st.dataframe(
+            count_missing_values(
+                st.session_state.dirty_df
+            ).to_frame("missing_count"),
+            use_container_width=True
+        )
+
+    if st.button("Return Rows with Missing Values"):
+        st.write("### Rows with Missing Values")
+        st.dataframe(
+            return_rows_with_missing_values(st.session_state.dirty_df),
+            use_container_width=True
+        )
+
+    if st.button("Return Missing Mask"):
+        st.write("### Missing Value Mask")
+        st.dataframe(
+            return_missing_mask(st.session_state.dirty_df),
+            use_container_width=True
+        )
+
+    if st.button("Fill Missing Values"):
+        st.session_state.dirty_df = fill_missing_values(
+            st.session_state.dirty_df)
+
+with col3:
+
+    if st.button("Count Duplicate Rows"):
+        st.write("### Duplicate Row Count")
+        st.write(count_duplicate_rows(st.session_state.dirty_df))
+
+    if st.button("Return Duplicates"):
+        st.write("### Duplicate Rows")
+        st.dataframe(
+            return_duplicates(st.session_state.dirty_df),
+            use_container_width=True
+        )
+    if st.button("Drop Duplicates"):
+        st.session_state.dirty_df = drop_duplicates(st.session_state.dirty_df)
