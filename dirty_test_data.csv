@@ -1,0 +1,101 @@
+customer_id,full_name,email,city,department,status,purchase_amount,signup_date,notes,score
+0.0,bob  Smith,none,houston,HR,, 250 , 2024-09-10 ,Needs Follow Up ,100
+2.0,Liam   Smith, USER@MAIL.COM ,houston,marketing, Suspended,??,2024-01-15,Prefers email,85 
+3.0,PETER  Davis,foo@bar.com ,austin, Finance ,Active,$300,13/13/2024,, seventy
+3.0, Charlie  brown, USER@MAIL.COM ,los angeles ,IT ,Active,,,Returned item, 72
+,jane  Anderson , USER@MAIL.COM ,SAN ANTONIO ,engineering , Suspended,four hundred,02-28-2024,,100
+6.0, Eve Anderson ,test@example.com,houston, Finance ,Active,N/A,01/22/2024,duplicate?, seventy
+6.0,mia Martinez,bademail@,philadelphia,operations, inactive ,four hundred,01/22/2024,VIP,100
+,frank  WILLIAMS,hello@site, Phoenix , Legal , inactive ,,2024-01-15, late payer , 72
+8.0,jane  TAYLOR,hello@site, Phoenix ,engineering , inactive ,??,, late payer ,N/A
+, Noah  Davis,bademail@, Phoenix ,HR, inactive ,"1,200", 2024-09-10 ,Returned item,N/A
+6.0, Eve Anderson ,test@example.com,houston, Finance ,Active,N/A,01/22/2024,duplicate?, seventy
+12.0,bob WILLIAMS,hello@site,austin,engineering ,active ,500.00,02-28-2024,  ,100
+13.0,GRACE RODRIGUEZ, USER@MAIL.COM , Dallas , Finance ,,,01/22/2024,Returned item,
+14.0,dAvE garcia ,, Dallas ,HR, Suspended, 250 ,not a date,Prefers email,100
+14.0, Eve WILLIAMS,bademail@, Dallas , Legal ,Active,??,,  ,90
+15.0,bob Miller,none, New York,marketing, Suspended, 250 ,01/22/2024,  , 72
+17.0,ALICE TAYLOR,bademail@,san diego, Legal , inactive ,four hundred, 2024-09-10 ,duplicate?,85 
+18.0,PETER TAYLOR,,SAN ANTONIO ,operations,active ,"1,200",2024-07-32,Needs Follow Up ,85 
+18.0,frank  johnson ,test@example.com,austin, Legal , inactive ,??,2024/04/18, good client,90
+20.0,jane  brown,test@example.com,philadelphia,engineering , Suspended,N/A,not a date,  ,85 
+,PETER WILLIAMS,none,san diego,IT , inactive , 250 ,01/22/2024,duplicate?, seventy
+,Liam   Davis,test@example.com,los angeles , Sales,active ,,01/22/2024, late payer ,85 
+, Eve RODRIGUEZ,bademail@,SAN ANTONIO ,HR,PENDING, 75,2024/04/18,Needs Follow Up ,
+24.0,PETER johnson ,test@example.com,los angeles ,marketing, inactive ,500.00,2024-07-32,  ,85 
+25.0, kevin  Smith,hello@site, New York,IT ,PENDING, 75,not a date,duplicate?,N/A
+6.0, Eve Anderson ,test@example.com,houston, Finance ,Active,N/A,01/22/2024,duplicate?, seventy
+27.0,Isaac   Smith,foo@bar.com , Dallas , Legal , inactive ,100, 2024-09-10 ,Needs Follow Up , 72
+28.0,dAvE johnson ,none,SAN ANTONIO ,engineering , Suspended,N/A,02-28-2024, good client,100
+28.0,ALICE  Davis,,houston,operations, inactive ,four hundred,13/13/2024,VIP,N/A
+29.0, hannah garcia , USER@MAIL.COM , New York,support, Suspended,??,01/22/2024,Needs Follow Up ,100
+30.0, Eve RODRIGUEZ,bademail@,philadelphia,engineering , inactive ,,not a date,VIP,
+31.0,PETER Anderson ,test@example.com, Dallas , Finance ,, 250 ,March 5 2024,Returned item,90
+33.0,bob Anderson ,, Phoenix ,product, inactive ,,2024/04/18,Returned item,100
+34.0, Noah  Jones , USER@MAIL.COM ,SAN ANTONIO , Finance ,Active,100,,VIP,N/A
+,GRACE WILLIAMS,hello@site, Dallas , Sales,Active, 250 ,March 5 2024,Prefers email,90
+36.0,JULIA wilson ,hello@site,CHICAGO, Sales,PENDING,,2024-01-15,,85 
+37.0,frank  Martinez,sample.user@gmail.com, Dallas ,IT , Suspended,$300,2024/04/18,VIP, 72
+38.0,dAvE  Davis,bademail@,philadelphia,IT ,,N/A,not a date,VIP, 72
+39.0,bob  Davis,foo@bar.com ,houston,marketing,active ,,not a date, late payer ,85 
+40.0, John Martinez,hello@site,philadelphia, Finance ,Active,four hundred,,Prefers email,
+41.0,PETER Miller, USER@MAIL.COM , Phoenix ,HR, Suspended,four hundred,2024-01-15,Needs Follow Up ,100
+41.0,Liam  Miller,hello@site,austin, Legal ,Active,500.00,02-28-2024, late payer , seventy
+,jane  Anderson ,test@example.com, Dallas , Legal ,,N/A,,duplicate?,90
+43.0,Isaac  wilson , USER@MAIL.COM , Phoenix , Legal ,PENDING,500.00,,duplicate?,N/A
+45.0, hannah RODRIGUEZ,none,SAN ANTONIO ,IT ,,$300,02-28-2024,Returned item,
+45.0,PETER  Smith,,houston,IT , Suspended,??,,  ,
+47.0,mia Martinez,foo@bar.com ,CHICAGO,engineering ,PENDING,"1,200",02-28-2024,,90
+47.0,frank  Martinez,none,houston,HR,Active,100,2024/04/18,  ,100
+,ALICE garcia ,none,SAN ANTONIO ,support,active ,N/A,March 5 2024, good client, 72
+,bob TAYLOR,none,CHICAGO, Legal ,active ,100, 2024-09-10 , late payer , 72
+,PETER WILLIAMS,none,san diego,IT , inactive , 250 ,01/22/2024,duplicate?, seventy
+52.0,PETER garcia ,foo@bar.com ,san diego, Finance , inactive ,four hundred, 2024-09-10 ,  ,N/A
+,frank   Jones , USER@MAIL.COM , Phoenix ,marketing,PENDING,,,Prefers email,90
+54.0, Charlie  WILLIAMS,hello@site,CHICAGO,marketing,Active,500.00,13/13/2024,,100
+55.0,mia  Davis,none,SAN ANTONIO ,IT , Suspended,100,02-28-2024,duplicate?,
+55.0, John Miller,hello@site,SAN ANTONIO , Legal ,,"1,200",02-28-2024, late payer ,
+,frank   Jones ,foo@bar.com , New York,IT ,PENDING,500.00,March 5 2024,  ,85 
+58.0,Ruby  RODRIGUEZ,hello@site,austin,product,,100,01/22/2024,duplicate?,85 
+59.0,mia WILLIAMS,,SAN ANTONIO ,operations, inactive , 75,,, 72
+, kevin  Jones ,,los angeles ,support,Active,"1,200",2024-01-15,,85 
+61.0,ALICE TAYLOR,test@example.com,houston,marketing,Active,??,March 5 2024, late payer ,85 
+62.0, Noah Martinez,none,san diego, Finance ,PENDING,$300,02-28-2024,Needs Follow Up , 72
+63.0,dAvE  Jones ,test@example.com, Phoenix ,product,,500.00,13/13/2024, late payer ,90
+64.0, quinn Anderson , USER@MAIL.COM , Phoenix ,product,Active,??,2024-01-15,,100
+64.0,Liam  Martinez, USER@MAIL.COM , Dallas ,operations,Active,500.00,2024-07-32,Needs Follow Up ,
+,JULIA Martinez,bademail@,SAN ANTONIO ,HR,,"1,200",not a date,Prefers email, 72
+, Noah garcia ,,philadelphia,marketing,Active,four hundred,2024-07-32, late payer , 72
+,mia wilson ,sample.user@gmail.com, New York,support,PENDING,$300,2024-07-32, late payer , seventy
+68.0,GRACE Miller,, Dallas , Sales, Suspended,N/A,01/22/2024, late payer ,N/A
+70.0,Liam  garcia ,foo@bar.com ,san diego,support,Active, 250 ,not a date, late payer ,
+70.0,frank   Jones ,foo@bar.com , Dallas , Legal ,PENDING,500.00, 2024-09-10 ,, seventy
+71.0,mia  Jones ,,houston,engineering ,,N/A,,Needs Follow Up ,N/A
+73.0,PETER TAYLOR,none,houston,support,PENDING,??, 2024-09-10 ,Returned item,90
+74.0, Eve  Jones ,sample.user@gmail.com,CHICAGO, Finance ,Active,"1,200",March 5 2024,Returned item,90
+74.0,jane  RODRIGUEZ,bademail@,san diego,engineering ,Active,??,not a date,  ,
+,PETER WILLIAMS,none,san diego,IT , inactive , 250 ,01/22/2024,duplicate?, seventy
+77.0, quinn Martinez,bademail@,CHICAGO,product,PENDING, 250 ,2024/04/18,Needs Follow Up ,100
+78.0,Liam  wilson ,hello@site,san diego,support,PENDING,??,13/13/2024,Returned item,100
+79.0,Ruby   Smith,none,houston, Finance ,, 250 ,March 5 2024, late payer ,85 
+80.0,PETER johnson ,test@example.com,SAN ANTONIO ,support,,??,2024-07-32,Returned item,90
+80.0,frank   Jones ,foo@bar.com ,los angeles ,marketing,PENDING,??,2024/04/18,duplicate?,90
+82.0,PETER brown,,CHICAGO,engineering ,Active,$300,not a date,Returned item,
+82.0,bob garcia ,hello@site, Phoenix , Legal , Suspended, 75,2024-07-32,Needs Follow Up ,100
+83.0,jane   Davis,, New York,engineering , inactive ,??,02-28-2024, good client, 72
+85.0,GRACE wilson ,bademail@,san diego, Legal ,, 75,not a date,VIP,100
+,Liam  Martinez, USER@MAIL.COM ,san diego,operations,active ,,,Needs Follow Up , 72
+,dAvE Miller,foo@bar.com , Phoenix ,IT , Suspended,100,2024-07-32,Needs Follow Up , seventy
+88.0,GRACE Miller,hello@site, Dallas , Sales,,"1,200",2024-07-32,duplicate?,90
+88.0, Eve RODRIGUEZ,foo@bar.com ,san diego, Sales, inactive ,four hundred, 2024-09-10 ,VIP, seventy
+,mia Anderson , USER@MAIL.COM , New York,product, inactive ,$300,not a date,Prefers email,90
+91.0,PETER  Davis,none,los angeles ,support,Active,$300,2024-07-32,Returned item,100
+,GRACE  Davis,foo@bar.com ,houston,support, Suspended,$300,13/13/2024, late payer ,100
+93.0,olivia  Anderson , USER@MAIL.COM , Phoenix ,IT ,PENDING,"1,200",not a date, good client, seventy
+, hannah wilson ,bademail@,san diego, Legal ,active ,,,Prefers email, 72
+,PETER  Davis,sample.user@gmail.com,houston,marketing, Suspended,500.00,2024/04/18,duplicate?,90
+,Isaac  Anderson ,hello@site,SAN ANTONIO ,HR,active ,100,March 5 2024,Prefers email,100
+,Isaac  johnson , USER@MAIL.COM , Dallas ,support,Active,$300,13/13/2024,VIP,90
+97.0, Noah TAYLOR,sample.user@gmail.com,austin,IT ,, 250 ,,Prefers email,
+,Isaac  Martinez,test@example.com,austin,engineering , inactive ,four hundred,2024/04/18,Needs Follow Up ,
+100.0,bob TAYLOR,foo@bar.com ,CHICAGO, Finance ,Active,100,, good client, seventy
