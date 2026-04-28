@@ -1,5 +1,4 @@
-"""Streamlit app for the Data Normalization Assistant."""
-"""
+"""Streamlit app for the Data Normalization Assistant.
 
 Collapse this section when not in use to keep the file easier to scan.
 Use as a quick reference for available app utilities.

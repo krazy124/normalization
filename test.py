@@ -243,8 +243,19 @@ def count_total_missing_values(dataframe):
     return dataframe.isna().sum().sum()
 
 
+def count_rows_with_missing_values(dataframe):
+    return dataframe.isna().any(axis=1).sum()
+
+
 def get_missing_values_by_column(dataframe):
     return dataframe.isna().sum()
+
+
+def get_missing_percent_by_column(dataframe):
+    if len(dataframe) == 0:
+        return pd.Series(0, index=dataframe.columns)
+
+    return (dataframe.isna().sum() / len(dataframe)) * 100
 
 
 def get_missing_row_percent(dataframe):
@@ -262,6 +273,7 @@ def get_data_health_summary(dataframe):
         "column_count": get_column_count(dataframe),
         "duplicate_count": count_duplicate_rows(dataframe),
         "total_missing": count_total_missing_values(dataframe),
+        "rows_with_missing": count_rows_with_missing_values(dataframe),
         "missing_by_column": get_missing_values_by_column(dataframe),
         "missing_row_percent": get_missing_row_percent(dataframe),
     }
@@ -270,7 +282,6 @@ def get_data_health_summary(dataframe):
 # =========================
 # Streamlit Dirty Data Display
 # =========================
-
 st.set_page_config(
     page_title="Function Test Page",
     page_icon="🧪",
@@ -288,8 +299,6 @@ record_count = st.number_input(
     step=1
 )
 
-dirty_df = generate_dirty_data(record_count)
-
 
 # =========================
 # Active Dirty Data Frame
@@ -301,55 +310,59 @@ if "dirty_df" not in st.session_state:
 if st.button("Generate New Dirty Data"):
     st.session_state.dirty_df = generate_dirty_data(record_count)
 
+
+# =========================
+# Dirty Data Display
+# =========================
+
 st.write("### Dirty Data")
 st.dataframe(st.session_state.dirty_df, use_container_width=True)
+
+
 # =========================
-# Data Health Summary
+# Data Health Dashboard
 # =========================
 
 summary = get_data_health_summary(st.session_state.dirty_df)
-
-st.write("### Data Health Summary")
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    st.metric("Rows", summary["row_count"])
-
-with col2:
-    st.metric("Columns", summary["column_count"])
-
-with col3:
-    st.metric("Duplicates", summary["duplicate_count"])
-
-with col4:
-    st.metric("Missing", summary["total_missing"])
-
-with col5:
-    st.metric("Missing %", f"{summary['missing_row_percent']:.2f}%")
-
 missing_by_column = summary["missing_by_column"]
 
-st.write("### Missing by Column")
+st.write("### Data Health Dashboard")
 
-col1, col2, col3, col4, col5, col6, col7, col8, col9, col10 = st.columns(10)
+left_panel, right_panel = st.columns([1, 2])
 
-column_cards = [
-    ("customer_id", col1),
-    ("full_name", col2),
-    ("email", col3),
-    ("city", col4),
-    ("department", col5),
-    ("status", col6),
-    ("purchase_amount", col7),
-    ("signup_date", col8),
-    ("notes", col9),
-    ("score", col10),
-]
+with left_panel:
+    with st.container(border=True):
+        st.write("#### Row Health")
 
-for column_name, column_container in column_cards:
-    with column_container:
-        st.metric(column_name, int(missing_by_column[column_name]))
+        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+
+        with metric_col1:
+            st.metric("Rows", summary["row_count"])
+
+        with metric_col2:
+            st.metric("Duplicates", summary["duplicate_count"])
+
+        with metric_col3:
+            st.metric("Rows w/ Missing", summary["rows_with_missing"])
+
+        with metric_col4:
+            st.metric("Incomplete Rows %",
+                      f"{summary['missing_row_percent']:.0f}%")
+
+with right_panel:
+    with st.container(border=True):
+        st.write("#### Column Missing Count")
+
+        missing_cols = st.columns(10)
+
+        column_names = list(missing_by_column.index)
+
+        for index, column_name in enumerate(column_names):
+            with missing_cols[index % 10]:
+                st.metric(
+                    column_name,
+                    int(missing_by_column[column_name])
+                )
 
 
 # =========================
@@ -364,10 +377,10 @@ with col1:
 
     if st.button("Convert to Lowercase"):
         st.session_state.dirty_df = convert_to_lowercase(
-            st.session_state.dirty_df)
+            st.session_state.dirty_df
+        )
 
 with col2:
-
     if st.button("Count Missing Values"):
         st.write("### Missing Values Count")
         st.dataframe(
@@ -393,10 +406,10 @@ with col2:
 
     if st.button("Fill Missing Values"):
         st.session_state.dirty_df = fill_missing_values(
-            st.session_state.dirty_df)
+            st.session_state.dirty_df
+        )
 
 with col3:
-
     if st.button("Count Duplicate Rows"):
         st.write("### Duplicate Row Count")
         st.write(count_duplicate_rows(st.session_state.dirty_df))
@@ -407,5 +420,6 @@ with col3:
             return_duplicates(st.session_state.dirty_df),
             use_container_width=True
         )
+
     if st.button("Drop Duplicates"):
         st.session_state.dirty_df = drop_duplicates(st.session_state.dirty_df)
