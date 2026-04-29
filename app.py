@@ -231,6 +231,13 @@ def get_missing_values_by_column(dataframe):
     return dataframe.isna().sum()
 
 
+def get_missing_percent_by_column(dataframe):
+    if len(dataframe) == 0:
+        return pd.Series(0, index=dataframe.columns)
+
+    return (dataframe.isna().sum() / len(dataframe)) * 100
+
+
 def get_missing_row_percent(dataframe):
     rows_with_missing = dataframe[dataframe.isna().any(axis=1)]
 

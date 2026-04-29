@@ -274,7 +274,7 @@ def get_data_health_summary(dataframe):
         "duplicate_count": count_duplicate_rows(dataframe),
         "total_missing": count_total_missing_values(dataframe),
         "rows_with_missing": count_rows_with_missing_values(dataframe),
-        "missing_by_column": get_missing_values_by_column(dataframe),
+        "missing_by_column": get_missing_percent_by_column(dataframe),
         "missing_row_percent": get_missing_row_percent(dataframe),
     }
 
@@ -351,7 +351,7 @@ with left_panel:
 
 with right_panel:
     with st.container(border=True):
-        st.write("#### Column Missing Count")
+        st.write("#### Column Missing Rate")
 
         missing_cols = st.columns(10)
 
@@ -361,7 +361,7 @@ with right_panel:
             with missing_cols[index % 10]:
                 st.metric(
                     column_name,
-                    int(missing_by_column[column_name])
+                    f"{missing_by_column[column_name]:.0f}%"
                 )
 
 
