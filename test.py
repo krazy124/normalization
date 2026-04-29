@@ -423,3 +423,77 @@ with col3:
 
     if st.button("Drop Duplicates"):
         st.session_state.dirty_df = drop_duplicates(st.session_state.dirty_df)
+
+# =========================
+# Column Transformation Preview
+# =========================
+
+st.write("---")
+st.write("### Column Transformations")
+
+selected_column = st.selectbox(
+    "Select a column to transform",
+    st.session_state.dirty_df.columns
+)
+
+preview_df = st.session_state.dirty_df.copy()
+
+transform_col, original_col, preview_col = st.columns([1, 2, 2])
+
+with transform_col:
+    st.write("#### Transformations")
+
+    if st.button("Convert to Numeric", key="col_convert_numeric"):
+        preview_df = convert_col_to_numeric(preview_df, selected_column)
+
+    if st.button("Show Failed Numeric Rows", key="col_failed_numeric"):
+        preview_df = return_failed_numeric_conversions(
+            preview_df,
+            selected_column
+        )
+
+    if st.button("Convert to Datetime", key="col_convert_datetime"):
+        preview_df = convert_col_to_datetime(preview_df, selected_column)
+
+    if st.button("Show Failed Datetime Rows", key="col_failed_datetime"):
+        preview_df = return_failed_datetime_conversions(
+            preview_df,
+            selected_column
+        )
+
+    if st.button("Fill Missing", key="col_fill_missing"):
+        preview_df = fill_missing_values_in_column(
+            preview_df,
+            selected_column
+        )
+
+    if st.button("Show Missing Rows", key="col_show_missing"):
+        preview_df = return_rows_with_missing_values_in_column(
+            preview_df,
+            selected_column
+        )
+
+with original_col:
+    st.write(f"#### Original: {selected_column}")
+    st.dataframe(
+        st.session_state.dirty_df[[selected_column]],
+        use_container_width=True
+    )
+
+with preview_col:
+    st.write(f"#### Preview: {selected_column}")
+
+    if selected_column in preview_df.columns:
+        st.dataframe(
+            preview_df[[selected_column]],
+            use_container_width=True
+        )
+    else:
+        st.dataframe(
+            preview_df,
+            use_container_width=True
+        )
+
+    if st.button("Apply Changes to DataFrame", key="apply_column_preview"):
+        st.session_state.dirty_df = preview_df.copy()
+        st.rerun()
