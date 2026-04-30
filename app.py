@@ -3,46 +3,60 @@
 Collapse this section when not in use to keep the file easier to scan.
 Use as a quick reference for available app utilities.
 
-DATAFRAME-LEVEL FUNCTIONS
+DATAFRAME TRANSFORMATIONS
 +-------------------------------------------+-----------------------------------------------+
 | Function Name                             | Parameters                                    |
 +-------------------------------------------+-----------------------------------------------+
 | load_data                                 | file                                          |
 | strip_whitespace                          | dataframe                                     |
 | convert_to_lowercase                      | dataframe                                     |
-| return_duplicates                         | dataframe                                     |
 | drop_duplicates                           | dataframe                                     |
+| fill_missing_values                       | dataframe, fill_value="Unknown"               |
++-------------------------------------------+-----------------------------------------------+
+
+DATAFRAME DIAGNOSTICS
++-------------------------------------------+-----------------------------------------------+
+| Function Name                             | Parameters                                    |
++-------------------------------------------+-----------------------------------------------+
+| return_duplicates                         | dataframe                                     |
 | count_missing_values                      | dataframe                                     |
 | return_missing_mask                       | dataframe                                     |
 | return_rows_with_missing_values           | dataframe                                     |
-| fill_missing_values                       | dataframe, fill_value="Unknown"               |
 | get_row_count                             | dataframe                                     |
 | get_column_count                          | dataframe                                     |
 | count_duplicate_rows                      | dataframe                                     |
 | count_total_missing_values                | dataframe                                     |
 | get_missing_values_by_column              | dataframe                                     |
+| get_missing_percent_by_column             | dataframe                                     |
 | get_missing_row_percent                   | dataframe                                     |
 | get_data_health_summary                   | dataframe                                     |
 +-------------------------------------------+-----------------------------------------------+
 
-COLUMN-LEVEL FUNCTIONS
+COLUMN TRANSFORMATIONS
 +-------------------------------------------+-----------------------------------------------+
 | Function Name                             | Parameters                                    |
 +-------------------------------------------+-----------------------------------------------+
 | convert_col_to_numeric                    | dataframe, column_name                        |
-| return_failed_numeric_conversions         | dataframe, column_name                        |
 | convert_keep_failed_numeric_conversions   | dataframe, column_name                        |
 | convert_to_int_with_na                    | dataframe, column_name                        |
 | convert_col_to_datetime                   | dataframe, column_name                        |
-| return_failed_datetime_conversions        | dataframe, column_name                        |
 | convert_keep_failed_datetime_conversions  | dataframe, column_name                        |
-| count_missing_values_in_column            | dataframe, column_name                        |
-| return_rows_with_missing_values_in_column | dataframe, column_name                        |
 | fill_missing_values_in_column             | dataframe, column_name, fill_value="Unknown"  |
 | preview_fill_missing_values_in_column     | dataframe, column_name, fill_value="Unknown"  |
 | flag_missing_values_in_column             | dataframe, column_name                        |
 +-------------------------------------------+-----------------------------------------------+
+
+COLUMN DIAGNOSTICS
++-------------------------------------------+-----------------------------------------------+
+| Function Name                             | Parameters                                    |
++-------------------------------------------+-----------------------------------------------+
+| return_failed_numeric_conversions         | dataframe, column_name                        |
+| return_failed_datetime_conversions        | dataframe, column_name                        |
+| count_missing_values_in_column            | dataframe, column_name                        |
+| return_rows_with_missing_values_in_column | dataframe, column_name                        |
++-------------------------------------------+-----------------------------------------------+
 """
+
 
 import pandas as pd
 import streamlit as st
