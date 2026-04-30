@@ -1,6 +1,8 @@
 import random
 import pandas as pd
 import streamlit as st
+import base64
+from pathlib import Path
 
 
 # =========================
@@ -287,6 +289,23 @@ st.set_page_config(
     page_icon="🧪",
     layout="wide"
 )
+image_path = Path("assets/matrix_background.png")
+encoded_image = base64.b64encode(image_path.read_bytes()).decode()
+
+st.markdown(f"""
+<style>
+.stApp {{
+    background-color:  rgb(0, 17, 57);
+}}
+            
+.main .block-container {{
+    background: rgb(0, 17, 57);
+    border-radius: 14px;
+    padding: 2rem;
+}}
+</style>
+""", unsafe_allow_html=True)
+
 
 st.title("Function Test Page")
 
@@ -313,7 +332,7 @@ with st.container(border=True):
         if "dirty_df" not in st.session_state:
             st.session_state.dirty_df = generate_dirty_data(record_count)
 
-        if st.button("Generate New Dirty Data", use_container_width=True):
+        if st.button("Generate Data", use_container_width=True):
             st.session_state.dirty_df = generate_dirty_data(record_count)
 
         st.write("")
@@ -349,7 +368,6 @@ with st.container(border=True):
 summary = get_data_health_summary(st.session_state.dirty_df)
 missing_by_column = summary["missing_by_column"]
 
-st.write("### Data Health Dashboard")
 
 with st.container(border=True):
     left_panel, right_panel = st.columns([1, 2])
@@ -391,118 +409,149 @@ with right_panel:
 
 
 # =========================
-# Transformation Buttons
-# =========================
-
-col1, col2 = st.columns(2)
-
-with col1:
-
-    if st.button("Return Rows with Missing Values"):
-        st.write("### Rows with Missing Values")
-        st.dataframe(
-            return_rows_with_missing_values(st.session_state.dirty_df),
-            use_container_width=True
-        )
-
-    if st.button("Return Missing Mask"):
-        st.write("### Missing Value Mask")
-        st.dataframe(
-            return_missing_mask(st.session_state.dirty_df),
-            use_container_width=True
-        )
-    if st.button("Return Duplicates"):
-        st.write("### Duplicate Rows")
-        st.dataframe(
-            return_duplicates(st.session_state.dirty_df),
-            use_container_width=True
-        )
-
-with col2:
-    if st.button("Count Duplicate Rows"):
-        st.write("### Duplicate Row Count")
-        st.write(count_duplicate_rows(st.session_state.dirty_df))
-
-    if st.button("Count Missing Values"):
-        st.write("### Missing Values Count")
-        st.dataframe(
-            count_missing_values(
-                st.session_state.dirty_df
-            ).to_frame("missing_count"),
-            use_container_width=True
-        )
-
-
-# =========================
 # Column Transformation Preview
 # =========================
 
 st.write("---")
 st.write("### Column Transformations")
 
-selected_column = st.selectbox(
-    "Select a column to transform",
-    st.session_state.dirty_df.columns
-)
+with st.container(border=True):
 
-preview_df = st.session_state.dirty_df.copy()
+    left, right = st.columns([2, 3])
 
-transform_col, original_col, preview_col = st.columns([1, 2, 2])
-
-with transform_col:
-    st.write("#### Transformations")
-
-    if st.button("Convert to Numeric", key="col_convert_numeric"):
-        preview_df = convert_col_to_numeric(preview_df, selected_column)
-
-    if st.button("Show Failed Numeric Rows", key="col_failed_numeric"):
-        preview_df = return_failed_numeric_conversions(
-            preview_df,
-            selected_column
+    with left:
+        selected_column = st.selectbox(
+            "Select a column to transform",
+            st.session_state.dirty_df.columns
         )
 
-    if st.button("Convert to Datetime", key="col_convert_datetime"):
-        preview_df = convert_col_to_datetime(preview_df, selected_column)
+    if "preview_df" not in st.session_state:
+        st.session_state.preview_df = st.session_state.dirty_df.copy()
 
-    if st.button("Show Failed Datetime Rows", key="col_failed_datetime"):
-        preview_df = return_failed_datetime_conversions(
-            preview_df,
-            selected_column
-        )
+    if "last_selected_column" not in st.session_state:
+        st.session_state.last_selected_column = selected_column
 
-    if st.button("Fill Missing", key="col_fill_missing"):
-        preview_df = fill_missing_values_in_column(
-            preview_df,
-            selected_column
-        )
+    if st.session_state.last_selected_column != selected_column:
+        st.session_state.preview_df = st.session_state.dirty_df.copy()
+        st.session_state.last_selected_column = selected_column
 
-    if st.button("Show Missing Rows", key="col_show_missing"):
-        preview_df = return_rows_with_missing_values_in_column(
-            preview_df,
-            selected_column
-        )
+    transform_col, blank_col1, original_col, blank_col2 = st.columns([
+                                                                     2, 1, 4, 4])
 
-with original_col:
-    st.write(f"#### Original: {selected_column}")
-    st.dataframe(
-        st.session_state.dirty_df[[selected_column]],
-        use_container_width=True
-    )
+    with transform_col:
+        st.write("#### Transformations")
 
-with preview_col:
-    st.write(f"#### Preview: {selected_column}")
+        st.write("")
+        st.write("")
 
-    if selected_column in preview_df.columns:
-        st.dataframe(
-            preview_df[[selected_column]],
-            use_container_width=True
-        )
-    else:
-        st.dataframe(
-            preview_df,
-            use_container_width=True
-        )
+        if st.button("Convert to Numeric", key="col_convert_numeric", use_container_width=True):
+            st.session_state.preview_df = convert_col_to_numeric(
+                st.session_state.preview_df,
+                selected_column
+            )
 
-    if st.button("Apply Changes to DataFrame", key="apply_column_preview"):
-        st.session_state.dirty_df = preview_df.copy()
-        st.rerun()
+        if st.button("Show Failed Numeric Rows", key="col_failed_numeric", use_container_width=True):
+            st.session_state.preview_df = return_failed_numeric_conversions(
+                st.session_state.preview_df,
+                selected_column
+            )
+
+        if st.button("Convert to Datetime", key="col_convert_datetime", use_container_width=True):
+            st.session_state.preview_df = convert_col_to_datetime(
+                st.session_state.preview_df,
+                selected_column
+            )
+
+        if st.button("Show Failed Datetime Rows", key="col_failed_datetime", use_container_width=True):
+            st.session_state.preview_df = return_failed_datetime_conversions(
+                st.session_state.preview_df,
+                selected_column
+            )
+
+        if st.button("Fill Missing", key="col_fill_missing", use_container_width=True):
+            st.session_state.preview_df = fill_missing_values_in_column(
+                st.session_state.preview_df,
+                selected_column
+            )
+
+        if st.button("Show Missing Rows", key="col_show_missing", use_container_width=True):
+            st.session_state.preview_df = return_rows_with_missing_values_in_column(
+                st.session_state.preview_df,
+                selected_column
+            )
+
+        st.write("")
+
+        st.write("")
+
+        if st.button("Apply Changes to DataFrame", key="apply_column_preview", use_container_width=True):
+            st.session_state.dirty_df = st.session_state.preview_df.copy()
+            st.session_state.preview_df = st.session_state.dirty_df.copy()
+            st.rerun()
+
+    with original_col:
+        st.write(f"#### Original: {selected_column}")
+
+        compare_df = pd.DataFrame({
+            f"Original: {selected_column}": st.session_state.dirty_df[selected_column],
+            f"Preview: {selected_column}": st.session_state.preview_df[selected_column]
+        })
+
+        st.dataframe(compare_df, use_container_width=True, height=450)
+
+
+# =========================
+# Column Reports
+# =========================
+
+
+st.write("### Column Reports")
+
+with st.container(border=True):
+
+    btn_col, report_col = st.columns([1, 3])
+
+    with btn_col:
+        st.write("")
+
+        st.write("")
+
+        st.write("")
+
+        st.write("")
+
+        if st.button("Return Rows with Missing Values", use_container_width=True):
+            st.session_state.column_report = "rows_with_missing"
+
+        if st.button("Return Missing Mask", use_container_width=True):
+            st.session_state.column_report = "missing_mask"
+
+        if st.button("Return Duplicates", use_container_width=True):
+            st.session_state.column_report = "duplicates"
+
+    with report_col:
+        if "column_report" not in st.session_state:
+            st.info("Select a report to view.")
+
+        elif st.session_state.column_report == "rows_with_missing":
+            st.write("### Rows with Missing Values")
+            st.dataframe(
+                return_rows_with_missing_values(st.session_state.dirty_df),
+                use_container_width=True
+            )
+
+        elif st.session_state.column_report == "missing_mask":
+            st.write("### Missing Value Mask")
+            st.dataframe(
+                return_missing_mask(st.session_state.dirty_df),
+                use_container_width=True
+            )
+
+        elif st.session_state.column_report == "duplicates":
+            st.write("### Duplicate Rows")
+            st.dataframe(
+                return_duplicates(st.session_state.dirty_df),
+                use_container_width=True
+            )
+
+st.write("")
