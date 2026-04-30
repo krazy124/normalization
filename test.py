@@ -281,6 +281,44 @@ def get_data_health_summary(dataframe):
     }
 
 
+def get_column_health(dataframe, column_name):
+    column = dataframe[column_name]
+    total_rows = len(column)
+
+    if total_rows == 0:
+        return {
+            "Missing %": "0%",
+            "Unique": 0,
+            "Duplicates": 0,
+            "Numeric Valid %": "0%",
+            "Datetime Valid %": "0%",
+        }
+
+    missing_percent = column.isna().sum() / total_rows * 100
+    unique_count = column.nunique(dropna=True)
+    duplicate_count = column.duplicated().sum()
+
+    numeric_converted = pd.to_numeric(column, errors="coerce")
+    numeric_valid_percent = (
+        numeric_converted.notna().sum() / column.notna().sum() * 100
+        if column.notna().sum() > 0 else 0
+    )
+
+    datetime_converted = pd.to_datetime(column, errors="coerce")
+    datetime_valid_percent = (
+        datetime_converted.notna().sum() / column.notna().sum() * 100
+        if column.notna().sum() > 0 else 0
+    )
+
+    return {
+        "Missing %": f"{missing_percent:.0f}%",
+        "Unique": unique_count,
+        "Duplicates": duplicate_count,
+        "Numeric Valid %": f"{numeric_valid_percent:.0f}%",
+        "Datetime Valid %": f"{datetime_valid_percent:.0f}%",
+    }
+
+
 # =========================
 # Streamlit Dirty Data Display
 # =========================
@@ -435,12 +473,10 @@ with st.container(border=True):
         st.session_state.preview_df = st.session_state.dirty_df.copy()
         st.session_state.last_selected_column = selected_column
 
-    transform_col, blank_col1, original_col, blank_col2 = st.columns([
-                                                                     2, 1, 4, 4])
+    transform_col, compare_col, health_col = st.columns([2, 4, 4])
 
     with transform_col:
         st.write("#### Transformations")
-
         st.write("")
         st.write("")
 
@@ -482,15 +518,13 @@ with st.container(border=True):
 
         st.write("")
 
-        st.write("")
-
         if st.button("Apply Changes to DataFrame", key="apply_column_preview", use_container_width=True):
             st.session_state.dirty_df = st.session_state.preview_df.copy()
             st.session_state.preview_df = st.session_state.dirty_df.copy()
             st.rerun()
 
-    with original_col:
-        st.write(f"#### Original: {selected_column}")
+    with compare_col:
+        st.write(f"#### Original vs Preview: {selected_column}")
 
         compare_df = pd.DataFrame({
             f"Original: {selected_column}": st.session_state.dirty_df[selected_column],
@@ -498,6 +532,31 @@ with st.container(border=True):
         })
 
         st.dataframe(compare_df, use_container_width=True, height=450)
+
+    with health_col:
+        st.write("#### Column Health Preview")
+
+        before_health = get_column_health(
+            st.session_state.dirty_df,
+            selected_column
+        )
+
+        after_health = get_column_health(
+            st.session_state.preview_df,
+            selected_column
+        )
+
+        before_col, after_col = st.columns(2)
+
+        with before_col:
+            st.write("##### Before")
+            for label, value in before_health.items():
+                st.metric(label, value)
+
+        with after_col:
+            st.write("##### After")
+            for label, value in after_health.items():
+                st.metric(label, value)
 
 
 # =========================
