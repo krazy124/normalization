@@ -158,6 +158,118 @@ def convert_col_to_datetime(dataframe, column_name):
     return dataframe
 
 
+def convert_iso_date_pattern(dataframe, column_name):
+    df = dataframe.copy()
+    df[column_name] = df[column_name].astype("object")
+
+    cleaned = df[column_name].astype(str).str.strip()
+    mask = cleaned.str.match(r"^\d{4}-\d{2}-\d{2}$", na=False)
+
+    converted = pd.to_datetime(
+        cleaned[mask],
+        format="%Y-%m-%d",
+        errors="coerce"
+    )
+
+    valid_mask = mask.copy()
+    valid_mask.loc[mask] = converted.notna()
+
+    df.loc[valid_mask, column_name] = converted[converted.notna()]
+    return df
+
+
+def convert_us_dash_date_pattern(dataframe, column_name):
+    df = dataframe.copy()
+    df[column_name] = df[column_name].astype("object")
+
+    cleaned = df[column_name].astype(str).str.strip()
+    mask = cleaned.str.match(r"^\d{2}-\d{2}-\d{4}$", na=False)
+
+    converted = pd.to_datetime(
+        cleaned[mask],
+        format="%m-%d-%Y",
+        errors="coerce"
+    )
+
+    valid_mask = mask.copy()
+    valid_mask.loc[mask] = converted.notna()
+
+    df.loc[valid_mask, column_name] = converted[converted.notna()]
+    return df
+
+
+def convert_us_slash_date_pattern(dataframe, column_name):
+    df = dataframe.copy()
+    df[column_name] = df[column_name].astype("object")
+
+    cleaned = df[column_name].astype(str).str.strip()
+    mask = cleaned.str.match(r"^\d{2}/\d{2}/\d{4}$", na=False)
+
+    converted = pd.to_datetime(
+        cleaned[mask],
+        format="%m/%d/%Y",
+        errors="coerce"
+    )
+
+    valid_mask = mask.copy()
+    valid_mask.loc[mask] = converted.notna()
+
+    df.loc[valid_mask, column_name] = converted[converted.notna()]
+    return df
+
+
+def convert_text_month_date_pattern(dataframe, column_name):
+    df = dataframe.copy()
+    df[column_name] = df[column_name].astype("object")
+
+    cleaned = df[column_name].astype(str).str.strip().str.lower()
+    mask = cleaned.str.match(r"^[a-zA-Z]+\s+\d{1,2}\s+\d{4}$", na=False)
+
+    converted = pd.to_datetime(
+        cleaned[mask],
+        format="%B %d %Y",
+        errors="coerce"
+    )
+
+    valid_mask = mask.copy()
+    valid_mask.loc[mask] = converted.notna()
+
+    df.loc[valid_mask, column_name] = converted[converted.notna()]
+    return df
+
+
+def convert_iso_slash_date_pattern(dataframe, column_name):
+    df = dataframe.copy()
+    df[column_name] = df[column_name].astype("object")
+
+    cleaned = df[column_name].astype(str).str.strip()
+    mask = cleaned.str.match(r"^\d{4}/\d{2}/\d{2}$", na=False)
+
+    converted = pd.to_datetime(
+        cleaned[mask],
+        format="%Y/%m/%d",
+        errors="coerce"
+    )
+
+    valid_mask = mask.copy()
+    valid_mask.loc[mask] = converted.notna()
+
+    df.loc[valid_mask, column_name] = converted[converted.notna()]
+    return df
+
+
+def convert_common_date_patterns(dataframe, column_name):
+    df = dataframe.copy()
+
+    df = convert_iso_date_pattern(df, column_name)
+    df = convert_us_dash_date_pattern(df, column_name)
+    df = convert_us_slash_date_pattern(df, column_name)
+    df = convert_text_month_date_pattern(df, column_name)
+    df = convert_iso_slash_date_pattern(df, column_name)
+
+    return df
+
+
 def return_failed_datetime_conversions(dataframe, column_name):
     converted = pd.to_datetime(dataframe[column_name], errors="coerce")
     return dataframe[converted.isna() & dataframe[column_name].notna()]
@@ -450,7 +562,7 @@ with right_panel:
 # Column Transformation Preview
 # =========================
 
-st.write("---")
+
 st.write("### Column Transformations")
 
 with st.container(border=True):
@@ -473,7 +585,8 @@ with st.container(border=True):
         st.session_state.preview_df = st.session_state.dirty_df.copy()
         st.session_state.last_selected_column = selected_column
 
-    transform_col, compare_col, health_col = st.columns([2, 4, 4])
+    transform_col, blank_col1, compare_col, blank_col2, health_col = st.columns([
+                                                                                2, 1, 4, 1, 4])
 
     with transform_col:
         st.write("#### Transformations")
@@ -493,7 +606,7 @@ with st.container(border=True):
             )
 
         if st.button("Convert to Datetime", key="col_convert_datetime", use_container_width=True):
-            st.session_state.preview_df = convert_col_to_datetime(
+            st.session_state.preview_df = convert_common_date_patterns(
                 st.session_state.preview_df,
                 selected_column
             )
@@ -512,6 +625,12 @@ with st.container(border=True):
 
         if st.button("Show Missing Rows", key="col_show_missing", use_container_width=True):
             st.session_state.preview_df = return_rows_with_missing_values_in_column(
+                st.session_state.preview_df,
+                selected_column
+            )
+
+        if st.button("Convert ISO Date Pattern", key="col_flag_missing", use_container_width=True):
+            st.session_state.preview_df = convert_iso_date_pattern(
                 st.session_state.preview_df,
                 selected_column
             )
