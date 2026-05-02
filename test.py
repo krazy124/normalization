@@ -117,10 +117,13 @@ def drop_duplicates(dataframe):
 
 def convert_col_to_numeric(dataframe, column_name):
     dataframe = dataframe.copy()
-    dataframe[column_name] = pd.to_numeric(
-        dataframe[column_name],
-        errors="coerce"
+    converted = pd.to_numeric(dataframe[column_name], errors="coerce")
+
+    dataframe[column_name] = converted.where(
+        converted.notna(),
+        dataframe[column_name]
     )
+
     return dataframe
 
 
@@ -465,6 +468,32 @@ def return_failed_clean_type_rows(dataframe, column_name):
     return dataframe[failed_mask]
 
 
+def highlight_failed_clean_type_rows(dataframe, column_name):
+    column = dataframe[column_name]
+
+    numeric_converted = pd.to_numeric(column, errors="coerce")
+    datetime_converted = pd.to_datetime(column, errors="coerce")
+
+    failed_mask = (
+        column.notna()
+        & numeric_converted.isna()
+        & datetime_converted.isna()
+    )
+
+    failed_rows = dataframe[failed_mask].copy()
+
+    def highlight_cell(row):
+        styles = [""] * len(row)
+        col_index = failed_rows.columns.get_loc(column_name)
+
+        if pd.notna(row[column_name]):
+            styles[col_index] = "background-color: #5c1f1f; color: #ffffff; font-weight: bold;"
+
+        return styles
+
+    return failed_rows.style.apply(highlight_cell, axis=1)
+
+
 # =========================
 # Streamlit Dirty Data Display
 # =========================
@@ -641,14 +670,14 @@ with st.container(border=True):
                 selected_column
             )
 
-        if st.button("Fill Missing", key="col_fill_missing", use_container_width=True):
-            st.session_state.preview_df = fill_missing_values_in_column(
+        if st.button("Convert ISO Date Pattern", key="col_flag_missing", use_container_width=True):
+            st.session_state.preview_df = convert_iso_date_pattern(
                 st.session_state.preview_df,
                 selected_column
             )
 
-        if st.button("Convert ISO Date Pattern", key="col_flag_missing", use_container_width=True):
-            st.session_state.preview_df = convert_iso_date_pattern(
+        if st.button("Fill Missing", key="col_fill_missing", use_container_width=True):
+            st.session_state.preview_df = fill_missing_values_in_column(
                 st.session_state.preview_df,
                 selected_column
             )
@@ -683,12 +712,6 @@ with st.container(border=True):
             selected_column
         )
 
-        conversion_success = get_conversion_success_percent(
-            st.session_state.dirty_df,
-            st.session_state.preview_df,
-            selected_column
-        )
-
         before_col, after_col = st.columns(2)
 
         with before_col:
@@ -700,8 +723,6 @@ with st.container(border=True):
             st.write("##### After")
             for label, value in after_health.items():
                 st.metric(label, value)
-
-            st.metric("Converted Successfully %", conversion_success)
 
 
 # =========================
@@ -760,7 +781,7 @@ with st.container(border=True):
             st.write(
                 f"### Rows Where `{selected_column}` Could Not Convert Cleanly")
             st.dataframe(
-                return_failed_clean_type_rows(
+                highlight_failed_clean_type_rows(
                     st.session_state.dirty_df,
                     selected_column
                 ),
