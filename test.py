@@ -431,6 +431,40 @@ def get_column_health(dataframe, column_name):
     }
 
 
+def get_conversion_success_percent(original_df, preview_df, column_name):
+    original = original_df[column_name]
+    preview = preview_df[column_name]
+
+    non_null_mask = original.notna()
+    eligible_rows = non_null_mask.sum()
+
+    if eligible_rows == 0:
+        return "0%"
+
+    changed_rows = (
+        original.astype(str) != preview.astype(str)
+    ) & non_null_mask
+
+    changed_count = changed_rows.sum()
+
+    return f"{(changed_count / eligible_rows) * 100:.0f}%"
+
+
+def return_failed_clean_type_rows(dataframe, column_name):
+    column = dataframe[column_name]
+
+    numeric_converted = pd.to_numeric(column, errors="coerce")
+    datetime_converted = pd.to_datetime(column, errors="coerce")
+
+    failed_mask = (
+        column.notna()
+        & numeric_converted.isna()
+        & datetime_converted.isna()
+    )
+
+    return dataframe[failed_mask]
+
+
 # =========================
 # Streamlit Dirty Data Display
 # =========================
@@ -439,6 +473,7 @@ st.set_page_config(
     page_icon="🧪",
     layout="wide"
 )
+
 image_path = Path("assets/matrix_background.png")
 encoded_image = base64.b64encode(image_path.read_bytes()).decode()
 
@@ -484,6 +519,7 @@ with st.container(border=True):
 
         if st.button("Generate Data", use_container_width=True):
             st.session_state.dirty_df = generate_dirty_data(record_count)
+            st.session_state.preview_df = st.session_state.dirty_df.copy()
 
         st.write("")
 
@@ -562,7 +598,6 @@ with right_panel:
 # Column Transformation Preview
 # =========================
 
-
 st.write("### Column Transformations")
 
 with st.container(border=True):
@@ -586,7 +621,8 @@ with st.container(border=True):
         st.session_state.last_selected_column = selected_column
 
     transform_col, blank_col1, compare_col, blank_col2, health_col = st.columns([
-                                                                                2, 1, 4, 1, 4])
+        2, 1, 4, 1, 4
+    ])
 
     with transform_col:
         st.write("#### Transformations")
@@ -599,32 +635,14 @@ with st.container(border=True):
                 selected_column
             )
 
-        if st.button("Show Failed Numeric Rows", key="col_failed_numeric", use_container_width=True):
-            st.session_state.preview_df = return_failed_numeric_conversions(
-                st.session_state.preview_df,
-                selected_column
-            )
-
         if st.button("Convert to Datetime", key="col_convert_datetime", use_container_width=True):
             st.session_state.preview_df = convert_common_date_patterns(
                 st.session_state.preview_df,
                 selected_column
             )
 
-        if st.button("Show Failed Datetime Rows", key="col_failed_datetime", use_container_width=True):
-            st.session_state.preview_df = return_failed_datetime_conversions(
-                st.session_state.preview_df,
-                selected_column
-            )
-
         if st.button("Fill Missing", key="col_fill_missing", use_container_width=True):
             st.session_state.preview_df = fill_missing_values_in_column(
-                st.session_state.preview_df,
-                selected_column
-            )
-
-        if st.button("Show Missing Rows", key="col_show_missing", use_container_width=True):
-            st.session_state.preview_df = return_rows_with_missing_values_in_column(
                 st.session_state.preview_df,
                 selected_column
             )
@@ -665,6 +683,12 @@ with st.container(border=True):
             selected_column
         )
 
+        conversion_success = get_conversion_success_percent(
+            st.session_state.dirty_df,
+            st.session_state.preview_df,
+            selected_column
+        )
+
         before_col, after_col = st.columns(2)
 
         with before_col:
@@ -677,11 +701,12 @@ with st.container(border=True):
             for label, value in after_health.items():
                 st.metric(label, value)
 
+            st.metric("Converted Successfully %", conversion_success)
+
 
 # =========================
 # Column Reports
 # =========================
-
 
 st.write("### Column Reports")
 
@@ -691,11 +716,8 @@ with st.container(border=True):
 
     with btn_col:
         st.write("")
-
         st.write("")
-
         st.write("")
-
         st.write("")
 
         if st.button("Return Rows with Missing Values", use_container_width=True):
@@ -706,6 +728,9 @@ with st.container(border=True):
 
         if st.button("Return Duplicates", use_container_width=True):
             st.session_state.column_report = "duplicates"
+
+        if st.button("Return Failed Clean Type Rows", use_container_width=True):
+            st.session_state.column_report = "failed_clean_type_rows"
 
     with report_col:
         if "column_report" not in st.session_state:
@@ -729,6 +754,16 @@ with st.container(border=True):
             st.write("### Duplicate Rows")
             st.dataframe(
                 return_duplicates(st.session_state.dirty_df),
+                use_container_width=True
+            )
+        elif st.session_state.column_report == "failed_clean_type_rows":
+            st.write(
+                f"### Rows Where `{selected_column}` Could Not Convert Cleanly")
+            st.dataframe(
+                return_failed_clean_type_rows(
+                    st.session_state.dirty_df,
+                    selected_column
+                ),
                 use_container_width=True
             )
 
