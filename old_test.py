@@ -9,7 +9,6 @@ from pathlib import Path
 # Dirty Data Generator
 # =========================
 
-# F1v1
 def generate_dirty_data(record_count):
     random.seed(42)
 
@@ -92,126 +91,9 @@ def generate_dirty_data(record_count):
     return pd.DataFrame(rows)
 
 
-# F2v1
-def get_row_count(dataframe):
-    return len(dataframe)
-
-
-# F3v1
-def get_column_count(dataframe):
-    return len(dataframe.columns)
-
-
-# F4v1
-def count_duplicate_rows(dataframe):
-    return dataframe.duplicated().sum()
-
-
-# F5v1
-def count_total_missing_values(dataframe):
-    return dataframe.isna().sum().sum()
-
-
-# F6v1
-def count_rows_with_missing_values(dataframe):
-    return dataframe.isna().any(axis=1).sum()
-
-
-# F7v1
-def get_missing_values_by_column(dataframe):
-    return dataframe.isna().sum()
-
-
-# F8v1
-def get_missing_percent_by_column(dataframe):
-    if len(dataframe) == 0:
-        return pd.Series(0, index=dataframe.columns)
-
-    return (dataframe.isna().sum() / len(dataframe)) * 100
-
-
-# F9v1
-def get_missing_row_percent(dataframe):
-    rows_with_missing = dataframe[dataframe.isna().any(axis=1)]
-
-    if len(dataframe) == 0:
-        return 0
-
-    return len(rows_with_missing) / len(dataframe) * 100
-
-
-# F10v1
-def get_data_health_summary(dataframe):
-    return {
-        "row_count": get_row_count(dataframe),
-        "column_count": get_column_count(dataframe),
-        "duplicate_count": count_duplicate_rows(dataframe),
-        "total_missing": count_total_missing_values(dataframe),
-        "rows_with_missing": count_rows_with_missing_values(dataframe),
-        "missing_by_column": get_missing_percent_by_column(dataframe),
-        "missing_row_percent": get_missing_row_percent(dataframe),
-    }
-
-
-# F11v2
-def get_column_health(dataframe, column_name):
-    column = dataframe[column_name]
-    total_rows = len(column)
-    non_missing_count = column.notna().sum()
-
-    if total_rows == 0:
-        return {
-            "Missing %": "0%",
-            "Unique Count": 0,
-            "Duplicate Count": 0,
-            "Best Detected Type": "Unknown",
-            "Valid Type %": "0%",
-            "Invalid / Unclean Count": 0,
-        }
-
-    missing_percent = column.isna().sum() / total_rows * 100
-    unique_count = column.nunique(dropna=True)
-    duplicate_count = column.duplicated().sum()
-
-    if non_missing_count == 0:
-        return {
-            "Missing %": f"{missing_percent:.0f}%",
-            "Unique Count": unique_count,
-            "Duplicate Count": duplicate_count,
-            "Best Detected Type": "Missing",
-            "Valid Type %": "0%",
-            "Invalid / Unclean Count": 0,
-        }
-
-    numeric_converted = pd.to_numeric(column, errors="coerce")
-    datetime_converted = pd.to_datetime(column, errors="coerce")
-
-    numeric_valid_count = numeric_converted.notna().sum()
-    datetime_valid_count = datetime_converted.notna().sum()
-
-    numeric_valid_percent = numeric_valid_count / non_missing_count * 100
-    datetime_valid_percent = datetime_valid_count / non_missing_count * 100
-
-    if numeric_valid_percent >= datetime_valid_percent:
-        best_detected_type = "Numeric"
-        valid_type_percent = numeric_valid_percent
-        invalid_unclean_count = non_missing_count - numeric_valid_count
-    else:
-        best_detected_type = "Datetime"
-        valid_type_percent = datetime_valid_percent
-        invalid_unclean_count = non_missing_count - datetime_valid_count
-
-    return {
-        "Missing %": f"{missing_percent:.0f}%",
-        "Unique Count": unique_count,
-        "Duplicate Count": duplicate_count,
-        "Best Detected Type": best_detected_type,
-        "Valid Type %": f"{valid_type_percent:.0f}%",
-        "Invalid / Unclean Count": invalid_unclean_count,
-    }
-
-# F12v1
-
+# =========================
+# App Functions Being Tested
+# =========================
 
 def strip_whitespace(dataframe):
     return dataframe.map(
@@ -219,88 +101,20 @@ def strip_whitespace(dataframe):
     )
 
 
-# F13v1
 def convert_to_lowercase(dataframe):
     return dataframe.map(
         lambda value: value.lower() if isinstance(value, str) else value
     )
 
 
-# F14v1
-def drop_duplicates(dataframe):
-    return dataframe.drop_duplicates()
-
-
-# F15v1
-def fill_missing_values(dataframe, fill_value="Unknown"):
-    return dataframe.fillna(fill_value)
-
-
-# F16v1
-def count_missing_values(dataframe):
-    return dataframe.isna().sum()
-
-
-# F17v1
-def return_missing_mask(dataframe):
-    return dataframe.isna()
-
-
-# F18v1
-def return_rows_with_missing_values(dataframe):
-    return dataframe[dataframe.isna().any(axis=1)]
-
-
-# F19v1
 def return_duplicates(dataframe):
     return dataframe[dataframe.duplicated()]
 
 
-# F20v1
-def count_missing_values_in_column(dataframe, column_name):
-    return dataframe[column_name].isna().sum()
+def drop_duplicates(dataframe):
+    return dataframe.drop_duplicates()
 
 
-# F21v1
-def return_rows_with_missing_values_in_column(dataframe, column_name):
-    return dataframe[dataframe[column_name].isna()]
-
-
-# F22v1
-def fill_missing_values_in_column(dataframe, column_name, fill_value="Unknown"):
-    dataframe = dataframe.copy()
-    dataframe[column_name] = dataframe[column_name].fillna(fill_value)
-    return dataframe
-
-
-# F23v1
-def preview_fill_missing_values_in_column(
-    dataframe,
-    column_name,
-    fill_value="Unknown"
-):
-    preview_dataframe = dataframe.copy()
-
-    before_missing = dataframe[column_name].isna().sum()
-
-    preview_dataframe[column_name] = preview_dataframe[column_name].fillna(
-        fill_value
-    )
-
-    after_missing = preview_dataframe[column_name].isna().sum()
-
-    return preview_dataframe, before_missing, after_missing
-
-
-# F24v1
-def flag_missing_values_in_column(dataframe, column_name):
-    dataframe = dataframe.copy()
-    flag_column_name = f"{column_name}_missing_flag"
-    dataframe[flag_column_name] = dataframe[column_name].isna()
-    return dataframe
-
-
-# F25v1
 def convert_col_to_numeric(dataframe, column_name):
     dataframe = dataframe.copy()
     converted = pd.to_numeric(dataframe[column_name], errors="coerce")
@@ -313,7 +127,11 @@ def convert_col_to_numeric(dataframe, column_name):
     return dataframe
 
 
-# F26v1
+def return_failed_numeric_conversions(dataframe, column_name):
+    converted = pd.to_numeric(dataframe[column_name], errors="coerce")
+    return dataframe[converted.isna() & dataframe[column_name].notna()]
+
+
 def convert_keep_failed_numeric_conversions(dataframe, column_name):
     dataframe = dataframe.copy()
     converted = pd.to_numeric(dataframe[column_name], errors="coerce")
@@ -325,7 +143,6 @@ def convert_keep_failed_numeric_conversions(dataframe, column_name):
     return dataframe
 
 
-# F27v1
 def convert_to_int_with_na(dataframe, column_name):
     dataframe = dataframe.copy()
     dataframe[column_name] = pd.to_numeric(
@@ -335,13 +152,6 @@ def convert_to_int_with_na(dataframe, column_name):
     return dataframe
 
 
-# F28v1
-def return_failed_numeric_conversions(dataframe, column_name):
-    converted = pd.to_numeric(dataframe[column_name], errors="coerce")
-    return dataframe[converted.isna() & dataframe[column_name].notna()]
-
-
-# F29v1
 def convert_col_to_datetime(dataframe, column_name):
     dataframe = dataframe.copy()
     dataframe[column_name] = pd.to_datetime(
@@ -351,25 +161,6 @@ def convert_col_to_datetime(dataframe, column_name):
     return dataframe
 
 
-# F30v1
-def convert_keep_failed_datetime_conversions(dataframe, column_name):
-    dataframe = dataframe.copy()
-    converted = pd.to_datetime(dataframe[column_name], errors="coerce")
-
-    dataframe[column_name] = converted.where(
-        converted.notna(),
-        dataframe[column_name]
-    )
-    return dataframe
-
-
-# F31v1
-def return_failed_datetime_conversions(dataframe, column_name):
-    converted = pd.to_datetime(dataframe[column_name], errors="coerce")
-    return dataframe[converted.isna() & dataframe[column_name].notna()]
-
-
-# F32v1
 def convert_iso_date_pattern(dataframe, column_name):
     df = dataframe.copy()
     df[column_name] = df[column_name].astype("object")
@@ -390,7 +181,6 @@ def convert_iso_date_pattern(dataframe, column_name):
     return df
 
 
-# F33v1
 def convert_us_dash_date_pattern(dataframe, column_name):
     df = dataframe.copy()
     df[column_name] = df[column_name].astype("object")
@@ -411,7 +201,6 @@ def convert_us_dash_date_pattern(dataframe, column_name):
     return df
 
 
-# F34v1
 def convert_us_slash_date_pattern(dataframe, column_name):
     df = dataframe.copy()
     df[column_name] = df[column_name].astype("object")
@@ -432,7 +221,6 @@ def convert_us_slash_date_pattern(dataframe, column_name):
     return df
 
 
-# F35v1
 def convert_text_month_date_pattern(dataframe, column_name):
     df = dataframe.copy()
     df[column_name] = df[column_name].astype("object")
@@ -453,7 +241,6 @@ def convert_text_month_date_pattern(dataframe, column_name):
     return df
 
 
-# F36v1
 def convert_iso_slash_date_pattern(dataframe, column_name):
     df = dataframe.copy()
     df[column_name] = df[column_name].astype("object")
@@ -474,7 +261,6 @@ def convert_iso_slash_date_pattern(dataframe, column_name):
     return df
 
 
-# F37v1
 def convert_common_date_patterns(dataframe, column_name):
     df = dataframe.copy()
 
@@ -487,7 +273,167 @@ def convert_common_date_patterns(dataframe, column_name):
     return df
 
 
-# F38v1
+def return_failed_datetime_conversions(dataframe, column_name):
+    converted = pd.to_datetime(dataframe[column_name], errors="coerce")
+    return dataframe[converted.isna() & dataframe[column_name].notna()]
+
+
+def convert_keep_failed_datetime_conversions(dataframe, column_name):
+    dataframe = dataframe.copy()
+    converted = pd.to_datetime(dataframe[column_name], errors="coerce")
+
+    dataframe[column_name] = converted.where(
+        converted.notna(),
+        dataframe[column_name]
+    )
+    return dataframe
+
+
+def count_missing_values(dataframe):
+    return dataframe.isna().sum()
+
+
+def return_missing_mask(dataframe):
+    return dataframe.isna()
+
+
+def return_rows_with_missing_values(dataframe):
+    return dataframe[dataframe.isna().any(axis=1)]
+
+
+def fill_missing_values(dataframe, fill_value="Unknown"):
+    return dataframe.fillna(fill_value)
+
+
+def count_missing_values_in_column(dataframe, column_name):
+    return dataframe[column_name].isna().sum()
+
+
+def return_rows_with_missing_values_in_column(dataframe, column_name):
+    return dataframe[dataframe[column_name].isna()]
+
+
+def fill_missing_values_in_column(dataframe, column_name, fill_value="Unknown"):
+    dataframe = dataframe.copy()
+    dataframe[column_name] = dataframe[column_name].fillna(fill_value)
+    return dataframe
+
+
+def preview_fill_missing_values_in_column(
+    dataframe,
+    column_name,
+    fill_value="Unknown"
+):
+    preview_dataframe = dataframe.copy()
+
+    before_missing = dataframe[column_name].isna().sum()
+
+    preview_dataframe[column_name] = preview_dataframe[column_name].fillna(
+        fill_value
+    )
+
+    after_missing = preview_dataframe[column_name].isna().sum()
+
+    return preview_dataframe, before_missing, after_missing
+
+
+def flag_missing_values_in_column(dataframe, column_name):
+    dataframe = dataframe.copy()
+    flag_column_name = f"{column_name}_missing_flag"
+    dataframe[flag_column_name] = dataframe[column_name].isna()
+    return dataframe
+
+
+def get_row_count(dataframe):
+    return len(dataframe)
+
+
+def get_column_count(dataframe):
+    return len(dataframe.columns)
+
+
+def count_duplicate_rows(dataframe):
+    return dataframe.duplicated().sum()
+
+
+def count_total_missing_values(dataframe):
+    return dataframe.isna().sum().sum()
+
+
+def count_rows_with_missing_values(dataframe):
+    return dataframe.isna().any(axis=1).sum()
+
+
+def get_missing_values_by_column(dataframe):
+    return dataframe.isna().sum()
+
+
+def get_missing_percent_by_column(dataframe):
+    if len(dataframe) == 0:
+        return pd.Series(0, index=dataframe.columns)
+
+    return (dataframe.isna().sum() / len(dataframe)) * 100
+
+
+def get_missing_row_percent(dataframe):
+    rows_with_missing = dataframe[dataframe.isna().any(axis=1)]
+
+    if len(dataframe) == 0:
+        return 0
+
+    return len(rows_with_missing) / len(dataframe) * 100
+
+
+def get_data_health_summary(dataframe):
+    return {
+        "row_count": get_row_count(dataframe),
+        "column_count": get_column_count(dataframe),
+        "duplicate_count": count_duplicate_rows(dataframe),
+        "total_missing": count_total_missing_values(dataframe),
+        "rows_with_missing": count_rows_with_missing_values(dataframe),
+        "missing_by_column": get_missing_percent_by_column(dataframe),
+        "missing_row_percent": get_missing_row_percent(dataframe),
+    }
+
+
+def get_column_health(dataframe, column_name):
+    column = dataframe[column_name]
+    total_rows = len(column)
+
+    if total_rows == 0:
+        return {
+            "Missing %": "0%",
+            "Unique": 0,
+            "Duplicates": 0,
+            "Numeric Valid %": "0%",
+            "Datetime Valid %": "0%",
+        }
+
+    missing_percent = column.isna().sum() / total_rows * 100
+    unique_count = column.nunique(dropna=True)
+    duplicate_count = column.duplicated().sum()
+
+    numeric_converted = pd.to_numeric(column, errors="coerce")
+    numeric_valid_percent = (
+        numeric_converted.notna().sum() / column.notna().sum() * 100
+        if column.notna().sum() > 0 else 0
+    )
+
+    datetime_converted = pd.to_datetime(column, errors="coerce")
+    datetime_valid_percent = (
+        datetime_converted.notna().sum() / column.notna().sum() * 100
+        if column.notna().sum() > 0 else 0
+    )
+
+    return {
+        "Missing %": f"{missing_percent:.0f}%",
+        "Unique": unique_count,
+        "Duplicates": duplicate_count,
+        "Numeric Valid %": f"{numeric_valid_percent:.0f}%",
+        "Datetime Valid %": f"{datetime_valid_percent:.0f}%",
+    }
+
+
 def get_conversion_success_percent(original_df, preview_df, column_name):
     original = original_df[column_name]
     preview = preview_df[column_name]
@@ -507,7 +453,6 @@ def get_conversion_success_percent(original_df, preview_df, column_name):
     return f"{(changed_count / eligible_rows) * 100:.0f}%"
 
 
-# F39v1
 def return_failed_clean_type_rows(dataframe, column_name):
     column = dataframe[column_name]
 
@@ -523,7 +468,6 @@ def return_failed_clean_type_rows(dataframe, column_name):
     return dataframe[failed_mask]
 
 
-# F40v1
 def highlight_failed_clean_type_rows(dataframe, column_name):
     column = dataframe[column_name]
 
@@ -551,7 +495,7 @@ def highlight_failed_clean_type_rows(dataframe, column_name):
 
 
 # =========================
-# S1v1 - Streamlit Page Setup
+# Streamlit Dirty Data Display
 # =========================
 st.set_page_config(
     page_title="Function Test Page",
@@ -559,10 +503,6 @@ st.set_page_config(
     layout="wide"
 )
 
-
-# =========================
-# S2v1 - App Styling
-# =========================
 image_path = Path("assets/matrix_background.png")
 encoded_image = base64.b64encode(image_path.read_bytes()).decode()
 
@@ -571,7 +511,7 @@ st.markdown(f"""
 .stApp {{
     background-color:  rgb(0, 17, 57);
 }}
-
+            
 .main .block-container {{
     background: rgb(0, 17, 57);
     border-radius: 14px;
@@ -581,25 +521,20 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# =========================
-# S3v1 - Main Title
-# =========================
 st.title("Function Test Page")
 
 
 # =========================
-# S4v1 - Dirty Data Display Section
+# Dirty Data Display
 # =========================
+
 st.write("### Data Frame Transformation Section")
 
-with st.container(border=True):
 
-    # S4.1v1 - Layout Columns
+with st.container(border=True):
     left_panel, right_panel = st.columns([1, 6])
 
     with left_panel:
-
-        # S4.2v1 - Record Count Input
         record_count = st.number_input(
             "Enter number of records",
             min_value=1,
@@ -608,18 +543,15 @@ with st.container(border=True):
             step=1
         )
 
-        # S4.3v1 - Dirty Data Session State
         if "dirty_df" not in st.session_state:
             st.session_state.dirty_df = generate_dirty_data(record_count)
 
-        # S4.4v1 - Generate Data Button
         if st.button("Generate Data", use_container_width=True):
             st.session_state.dirty_df = generate_dirty_data(record_count)
             st.session_state.preview_df = st.session_state.dirty_df.copy()
 
         st.write("")
 
-        # S4.5v1 - DataFrame Transformation Buttons
         if st.button("Strip Whitespace", use_container_width=True):
             st.session_state.dirty_df = strip_whitespace(
                 st.session_state.dirty_df
@@ -641,26 +573,23 @@ with st.container(border=True):
             )
 
     with right_panel:
-
-        # S4.6v1 - Dirty DataFrame Display
         st.dataframe(st.session_state.dirty_df, use_container_width=True)
 
 
 # =========================
-# S5v1 - Data Health Dashboard
+# Data Health Dashboard
 # =========================
+
 summary = get_data_health_summary(st.session_state.dirty_df)
 missing_by_column = summary["missing_by_column"]
 
-with st.container(border=True):
 
-    # S5.1v1 - Dashboard Layout Columns
+with st.container(border=True):
     left_panel, right_panel = st.columns([1, 2])
+
 
 with left_panel:
     with st.container(border=True):
-
-        # S5.2v1 - Row Health Metrics
         st.write("#### Row Health")
 
         metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
@@ -675,18 +604,15 @@ with left_panel:
             st.metric("Rows w/ Missing", summary["rows_with_missing"])
 
         with metric_col4:
-            st.metric(
-                "Incomplete Rows %",
-                f"{summary['missing_row_percent']:.0f}%"
-            )
+            st.metric("Incomplete Rows %",
+                      f"{summary['missing_row_percent']:.0f}%")
 
 with right_panel:
     with st.container(border=True):
-
-        # S5.3v1 - Column Missing Rate Metrics
         st.write("#### Column Missing Rate")
 
         missing_cols = st.columns(10)
+
         column_names = list(missing_by_column.index)
 
         for index, column_name in enumerate(column_names):
@@ -698,24 +624,21 @@ with right_panel:
 
 
 # =========================
-# S6v1 - Column Transformation Preview
+# Column Transformation Preview
 # =========================
+
 st.write("### Column Transformations")
 
 with st.container(border=True):
 
-    # S6.1v1 - Column Selector Layout
     left, right = st.columns([2, 3])
 
     with left:
-
-        # S6.2v1 - Selected Column Dropdown
         selected_column = st.selectbox(
             "Select a column to transform",
             st.session_state.dirty_df.columns
         )
 
-    # S6.3v1 - Preview Session State
     if "preview_df" not in st.session_state:
         st.session_state.preview_df = st.session_state.dirty_df.copy()
 
@@ -726,14 +649,11 @@ with st.container(border=True):
         st.session_state.preview_df = st.session_state.dirty_df.copy()
         st.session_state.last_selected_column = selected_column
 
-    # S6.4v1 - Column Transformation Layout
     transform_col, blank_col1, compare_col, blank_col2, health_col = st.columns([
         2, 1, 4, 1, 4
     ])
 
     with transform_col:
-
-        # S6.5v1 - Column Transformation Buttons
         st.write("#### Transformations")
         st.write("")
         st.write("")
@@ -770,8 +690,6 @@ with st.container(border=True):
             st.rerun()
 
     with compare_col:
-
-        # S6.6v1 - Original vs Preview Compare Table
         st.write(f"#### Original vs Preview: {selected_column}")
 
         compare_df = pd.DataFrame({
@@ -782,8 +700,6 @@ with st.container(border=True):
         st.dataframe(compare_df, use_container_width=True, height=450)
 
     with health_col:
-
-        # S6.7v1 - Column Health Preview
         st.write("#### Column Health Preview")
 
         before_health = get_column_health(
@@ -810,18 +726,16 @@ with st.container(border=True):
 
 
 # =========================
-# S7v1 - Column Reports
+# Column Reports
 # =========================
+
 st.write("### Column Reports")
 
 with st.container(border=True):
 
-    # S7.1v1 - Report Layout Columns
     btn_col, report_col = st.columns([1, 3])
 
     with btn_col:
-
-        # S7.2v1 - Report Buttons
         st.write("")
         st.write("")
         st.write("")
@@ -840,8 +754,6 @@ with st.container(border=True):
             st.session_state.column_report = "failed_clean_type_rows"
 
     with report_col:
-
-        # S7.3v1 - Report Display Logic
         if "column_report" not in st.session_state:
             st.info("Select a report to view.")
 
@@ -865,11 +777,9 @@ with st.container(border=True):
                 return_duplicates(st.session_state.dirty_df),
                 use_container_width=True
             )
-
         elif st.session_state.column_report == "failed_clean_type_rows":
             st.write(
-                f"### Rows Where `{selected_column}` Could Not Convert Cleanly"
-            )
+                f"### Rows Where `{selected_column}` Could Not Convert Cleanly")
             st.dataframe(
                 highlight_failed_clean_type_rows(
                     st.session_state.dirty_df,
