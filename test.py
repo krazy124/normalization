@@ -1175,48 +1175,20 @@ def add_transformation_step(function_name, column_name):
 #     return "\n".join(code_lines)
 
 
-# F49v2
+# F49v3
 def generate_transformation_code(transformation_steps):
     code_lines = [
         "import pandas as pd",
-        "import re",
-        "",
-        "",
-        "def create_or_update_transformation_mask(dataframe, mask_df=None):",
-        "    if mask_df is None:",
-        "        mask_df = pd.DataFrame(",
-        '            "unprocessed",',
-        "            index=dataframe.index,",
-        "            columns=dataframe.columns",
-        "        )",
-        "    else:",
-        "        mask_df = mask_df.copy()",
-        "",
-        "    mask_df = mask_df.reindex(index=dataframe.index)",
-        "",
-        "    for column_name in dataframe.columns:",
-        "        if column_name not in mask_df.columns:",
-        '            mask_df[column_name] = "unprocessed"',
-        "",
-        "        missing_mask = (",
-        "            dataframe[column_name].isna()",
-        "            | dataframe[column_name].astype(str).str.strip().eq(\"\")",
-        "        )",
-        "",
-        '        mask_df.loc[missing_mask, column_name] = "missing"',
-        "",
-        "    return mask_df[dataframe.columns]",
         "",
         "",
         "def clean_data(df):",
         "    df = df.copy()",
-        "    mask_df = create_or_update_transformation_mask(df)",
         ""
     ]
 
     for step in transformation_steps:
         code_lines.append(
-            get_standalone_transformation_code(
+            get_pure_transformation_code(
                 step["function"],
                 step["column"]
             )
@@ -1224,121 +1196,57 @@ def generate_transformation_code(transformation_steps):
 
     code_lines.extend([
         "",
-        "    return df, mask_df"
+        "    return df"
     ])
 
     return "\n".join(code_lines)
 
 
-# F50v1
-def get_standalone_transformation_code(function_name, column_name):
-    column = column_name
-
+# F50v2
+def get_pure_transformation_code(function_name, column_name):
     templates = {
         "convert_col_to_numeric": f'''
-    # Convert to Float: {column}
-    original = df["{column}"].copy()
-    converted = pd.to_numeric(original, errors="coerce")
+    # Convert to Float: {column_name}
+    converted = pd.to_numeric(df["{column_name}"], errors="coerce")
 
-    result = original.astype("object").copy()
-    result.loc[converted.notna()] = converted.loc[converted.notna()]
-    df["{column}"] = result
-
-    missing_mask = original.isna() | original.astype(str).str.strip().eq("")
-    valid_mask = original.notna() & ~missing_mask & converted.notna()
-    cleaned_mask = valid_mask & (original.astype(str) != df["{column}"].astype(str))
-    invalid_mask = original.notna() & ~missing_mask & converted.isna()
-
-    mask_df.loc[missing_mask, "{column}"] = "missing"
-    mask_df.loc[valid_mask, "{column}"] = "valid"
-    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
-    mask_df.loc[invalid_mask, "{column}"] = "invalid format"
+    df["{column_name}"] = converted.where(
+        converted.notna(),
+        df["{column_name}"]
+    )
 ''',
 
         "convert_to_int_keep_failed": f'''
-    # Convert to Int: {column}
-    original = df["{column}"].copy()
-    cleaned = original.astype("string").str.strip()
+    # Convert to Int: {column_name}
+    cleaned = df["{column_name}"].astype("string").str.strip()
     converted = pd.to_numeric(cleaned, errors="coerce")
 
     integer_mask = converted.notna() & (converted % 1 == 0)
 
-    result = original.astype("object").copy()
+    result = df["{column_name}"].astype("object").copy()
     result.loc[integer_mask] = converted.loc[integer_mask].astype("Int64")
-    df["{column}"] = result
 
-    missing_mask = original.isna() | original.astype(str).str.strip().eq("")
-    valid_mask = original.notna() & ~missing_mask & integer_mask
-    cleaned_mask = valid_mask & (
-        (original.astype(str).str.strip() != df["{column}"].astype(str))
-        | (original.map(type) != df["{column}"].map(type))
-    )
-    invalid_mask = original.notna() & ~missing_mask & ~integer_mask
-
-    mask_df.loc[missing_mask, "{column}"] = "missing"
-    mask_df.loc[valid_mask, "{column}"] = "valid"
-    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
-    mask_df.loc[invalid_mask, "{column}"] = "invalid format"
-''',
-
-        "convert_currency_to_numeric": f'''
-    # Convert Currency: {column}
-    original = df["{column}"].copy()
-
-    cleaned = (
-        original
-        .astype("string")
-        .str.replace(r"[\\$,]", "", regex=True)
-        .str.strip()
-    )
-
-    converted = pd.to_numeric(cleaned, errors="coerce")
-
-    result = original.astype("object").copy()
-    result.loc[converted.notna()] = converted.loc[converted.notna()]
-    df["{column}"] = result
-
-    missing_mask = original.isna() | original.astype(str).str.strip().eq("")
-    valid_mask = original.notna() & ~missing_mask & converted.notna()
-    cleaned_mask = valid_mask & (original.astype(str) != df["{column}"].astype(str))
-    invalid_mask = original.notna() & ~missing_mask & converted.isna()
-
-    mask_df.loc[missing_mask, "{column}"] = "missing"
-    mask_df.loc[valid_mask, "{column}"] = "valid"
-    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
-    mask_df.loc[invalid_mask, "{column}"] = "invalid format"
+    df["{column_name}"] = result
 ''',
 
         "convert_common_date_patterns": f'''
-    # Convert to Datetime: {column}
-    original = df["{column}"].copy()
-    cleaned = original.astype("string").str.strip()
-
+    # Convert to Datetime: {column_name}
+    cleaned = df["{column_name}"].astype("string").str.strip()
     converted = pd.to_datetime(cleaned, errors="coerce")
 
-    result = original.astype("object").copy()
+    result = df["{column_name}"].astype("object").copy()
     result.loc[converted.notna()] = converted.loc[converted.notna()]
-    df["{column}"] = result
 
-    missing_mask = original.isna() | original.astype(str).str.strip().eq("")
-    valid_mask = original.notna() & ~missing_mask & converted.notna()
-    cleaned_mask = valid_mask & (original.astype(str) != df["{column}"].astype(str))
-    invalid_mask = original.notna() & ~missing_mask & converted.isna()
-
-    mask_df.loc[missing_mask, "{column}"] = "missing"
-    mask_df.loc[valid_mask, "{column}"] = "valid"
-    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
-    mask_df.loc[invalid_mask, "{column}"] = "invalid format"
+    df["{column_name}"] = result
 ''',
 
         "clean_and_validate_email_column": f'''
-    # Clean / Validate Email: {column}
-    original = df["{column}"].copy()
-
+    # Clean / Validate Email: {column_name}
     email_pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{{2,}}$"
 
+    original = df["{column_name}"].copy()
+
     cleaned = (
-        df["{column}"]
+        df["{column_name}"]
         .astype("string")
         .str.strip()
         .str.lower()
@@ -1350,91 +1258,53 @@ def get_standalone_transformation_code(function_name, column_name):
 
     valid_email_mask = cleaned.str.match(email_pattern, na=False).fillna(False)
 
-    df["{column}"] = cleaned.where(
+    df["{column_name}"] = cleaned.where(
         valid_email_mask | cleaned.isna(),
         original
     )
-
-    missing_mask = cleaned.isna()
-    comparison_mask = (
-        original.fillna("").astype(str)
-        != cleaned.fillna("").astype(str)
-    ).fillna(False)
-
-    cleaned_mask = valid_email_mask & comparison_mask
-    valid_mask = valid_email_mask & ~cleaned_mask
-    invalid_mask = cleaned.notna() & ~valid_email_mask
-
-    mask_df.loc[missing_mask, "{column}"] = "missing"
-    mask_df.loc[valid_mask, "{column}"] = "valid"
-    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
-    mask_df.loc[invalid_mask, "{column}"] = "invalid format"
 ''',
 
         "fill_missing_values_in_column": f'''
-    # Fill Missing: {column}
-    original = df["{column}"].copy()
+    # Fill Missing: {column_name}
+    df["{column_name}"] = df["{column_name}"].fillna("Unknown")
+''',
 
-    missing_mask = original.isna()
-    valid_mask = original.notna()
+        "convert_currency_to_numeric": f'''
+    # Convert Currency: {column_name}
+    cleaned = (
+        df["{column_name}"]
+        .astype("string")
+        .str.replace(r"[\\$,]", "", regex=True)
+        .str.strip()
+    )
 
-    df["{column}"] = df["{column}"].fillna("Unknown")
+    converted = pd.to_numeric(cleaned, errors="coerce")
 
-    mask_df.loc[missing_mask, "{column}"] = "cleaned"
-    mask_df.loc[valid_mask, "{column}"] = "valid"
+    result = df["{column_name}"].astype("object").copy()
+    result.loc[converted.notna()] = converted.loc[converted.notna()]
+
+    df["{column_name}"] = result
 ''',
 
         "convert_to_titlecase": f'''
-    # Convert to Title Case: {column}
-    original = df["{column}"].copy()
-
-    transformed = original.map(
+    # Convert to Title Case: {column_name}
+    df["{column_name}"] = df["{column_name}"].map(
         lambda value: value.title() if isinstance(value, str) else value
     )
-
-    df["{column}"] = transformed
-
-    missing_mask = original.isna()
-    cleaned_mask = (
-        original.notna()
-        & original.map(lambda value: isinstance(value, str))
-        & (original.astype(str) != transformed.astype(str))
-    )
-    valid_mask = original.notna() & ~cleaned_mask
-
-    mask_df.loc[missing_mask, "{column}"] = "missing"
-    mask_df.loc[valid_mask, "{column}"] = "valid"
-    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
 ''',
 
         "convert_column_to_lowercase": f'''
-    # Convert to Lowercase: {column}
-    original = df["{column}"].copy()
-
-    transformed = original.map(
+    # Convert to Lowercase: {column_name}
+    df["{column_name}"] = df["{column_name}"].map(
         lambda value: value.lower() if isinstance(value, str) else value
     )
-
-    df["{column}"] = transformed
-
-    missing_mask = original.isna()
-    cleaned_mask = (
-        original.notna()
-        & original.map(lambda value: isinstance(value, str))
-        & (original.astype(str) != transformed.astype(str))
-    )
-    valid_mask = original.notna() & ~cleaned_mask
-
-    mask_df.loc[missing_mask, "{column}"] = "missing"
-    mask_df.loc[valid_mask, "{column}"] = "valid"
-    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
 '''
     }
 
     return templates.get(
         function_name,
         f'''
-    # Unsupported transformation: {function_name} on {column}
+    # Unsupported transformation: {function_name} on {column_name}
 '''
     )
 
