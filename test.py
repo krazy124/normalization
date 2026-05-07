@@ -1140,6 +1140,305 @@ def get_currency_invalid_reason(value):
     return "Invalid currency format"
 
 
+# F48v1
+def add_transformation_step(function_name, column_name):
+    if "transformation_steps" not in st.session_state:
+        st.session_state.transformation_steps = []
+
+    st.session_state.transformation_steps.append({
+        "function": function_name,
+        "column": column_name
+    })
+
+
+# # F49v1
+# def generate_transformation_code(transformation_steps):
+#     code_lines = [
+#         "def clean_data(df):",
+#         "    mask_df = create_or_update_transformation_mask(df)",
+#         ""
+#     ]
+
+#     for step in transformation_steps:
+#         function_name = step["function"]
+#         column_name = step["column"]
+
+#         code_lines.append(
+#             f'    df, mask_df = {function_name}(df, "{column_name}", mask_df)'
+#         )
+
+#     code_lines.extend([
+#         "",
+#         "    return df, mask_df"
+#     ])
+
+#     return "\n".join(code_lines)
+
+
+# F49v2
+def generate_transformation_code(transformation_steps):
+    code_lines = [
+        "import pandas as pd",
+        "import re",
+        "",
+        "",
+        "def create_or_update_transformation_mask(dataframe, mask_df=None):",
+        "    if mask_df is None:",
+        "        mask_df = pd.DataFrame(",
+        '            "unprocessed",',
+        "            index=dataframe.index,",
+        "            columns=dataframe.columns",
+        "        )",
+        "    else:",
+        "        mask_df = mask_df.copy()",
+        "",
+        "    mask_df = mask_df.reindex(index=dataframe.index)",
+        "",
+        "    for column_name in dataframe.columns:",
+        "        if column_name not in mask_df.columns:",
+        '            mask_df[column_name] = "unprocessed"',
+        "",
+        "        missing_mask = (",
+        "            dataframe[column_name].isna()",
+        "            | dataframe[column_name].astype(str).str.strip().eq(\"\")",
+        "        )",
+        "",
+        '        mask_df.loc[missing_mask, column_name] = "missing"',
+        "",
+        "    return mask_df[dataframe.columns]",
+        "",
+        "",
+        "def clean_data(df):",
+        "    df = df.copy()",
+        "    mask_df = create_or_update_transformation_mask(df)",
+        ""
+    ]
+
+    for step in transformation_steps:
+        code_lines.append(
+            get_standalone_transformation_code(
+                step["function"],
+                step["column"]
+            )
+        )
+
+    code_lines.extend([
+        "",
+        "    return df, mask_df"
+    ])
+
+    return "\n".join(code_lines)
+
+
+# F50v1
+def get_standalone_transformation_code(function_name, column_name):
+    column = column_name
+
+    templates = {
+        "convert_col_to_numeric": f'''
+    # Convert to Float: {column}
+    original = df["{column}"].copy()
+    converted = pd.to_numeric(original, errors="coerce")
+
+    result = original.astype("object").copy()
+    result.loc[converted.notna()] = converted.loc[converted.notna()]
+    df["{column}"] = result
+
+    missing_mask = original.isna() | original.astype(str).str.strip().eq("")
+    valid_mask = original.notna() & ~missing_mask & converted.notna()
+    cleaned_mask = valid_mask & (original.astype(str) != df["{column}"].astype(str))
+    invalid_mask = original.notna() & ~missing_mask & converted.isna()
+
+    mask_df.loc[missing_mask, "{column}"] = "missing"
+    mask_df.loc[valid_mask, "{column}"] = "valid"
+    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
+    mask_df.loc[invalid_mask, "{column}"] = "invalid format"
+''',
+
+        "convert_to_int_keep_failed": f'''
+    # Convert to Int: {column}
+    original = df["{column}"].copy()
+    cleaned = original.astype("string").str.strip()
+    converted = pd.to_numeric(cleaned, errors="coerce")
+
+    integer_mask = converted.notna() & (converted % 1 == 0)
+
+    result = original.astype("object").copy()
+    result.loc[integer_mask] = converted.loc[integer_mask].astype("Int64")
+    df["{column}"] = result
+
+    missing_mask = original.isna() | original.astype(str).str.strip().eq("")
+    valid_mask = original.notna() & ~missing_mask & integer_mask
+    cleaned_mask = valid_mask & (
+        (original.astype(str).str.strip() != df["{column}"].astype(str))
+        | (original.map(type) != df["{column}"].map(type))
+    )
+    invalid_mask = original.notna() & ~missing_mask & ~integer_mask
+
+    mask_df.loc[missing_mask, "{column}"] = "missing"
+    mask_df.loc[valid_mask, "{column}"] = "valid"
+    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
+    mask_df.loc[invalid_mask, "{column}"] = "invalid format"
+''',
+
+        "convert_currency_to_numeric": f'''
+    # Convert Currency: {column}
+    original = df["{column}"].copy()
+
+    cleaned = (
+        original
+        .astype("string")
+        .str.replace(r"[\\$,]", "", regex=True)
+        .str.strip()
+    )
+
+    converted = pd.to_numeric(cleaned, errors="coerce")
+
+    result = original.astype("object").copy()
+    result.loc[converted.notna()] = converted.loc[converted.notna()]
+    df["{column}"] = result
+
+    missing_mask = original.isna() | original.astype(str).str.strip().eq("")
+    valid_mask = original.notna() & ~missing_mask & converted.notna()
+    cleaned_mask = valid_mask & (original.astype(str) != df["{column}"].astype(str))
+    invalid_mask = original.notna() & ~missing_mask & converted.isna()
+
+    mask_df.loc[missing_mask, "{column}"] = "missing"
+    mask_df.loc[valid_mask, "{column}"] = "valid"
+    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
+    mask_df.loc[invalid_mask, "{column}"] = "invalid format"
+''',
+
+        "convert_common_date_patterns": f'''
+    # Convert to Datetime: {column}
+    original = df["{column}"].copy()
+    cleaned = original.astype("string").str.strip()
+
+    converted = pd.to_datetime(cleaned, errors="coerce")
+
+    result = original.astype("object").copy()
+    result.loc[converted.notna()] = converted.loc[converted.notna()]
+    df["{column}"] = result
+
+    missing_mask = original.isna() | original.astype(str).str.strip().eq("")
+    valid_mask = original.notna() & ~missing_mask & converted.notna()
+    cleaned_mask = valid_mask & (original.astype(str) != df["{column}"].astype(str))
+    invalid_mask = original.notna() & ~missing_mask & converted.isna()
+
+    mask_df.loc[missing_mask, "{column}"] = "missing"
+    mask_df.loc[valid_mask, "{column}"] = "valid"
+    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
+    mask_df.loc[invalid_mask, "{column}"] = "invalid format"
+''',
+
+        "clean_and_validate_email_column": f'''
+    # Clean / Validate Email: {column}
+    original = df["{column}"].copy()
+
+    email_pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{{2,}}$"
+
+    cleaned = (
+        df["{column}"]
+        .astype("string")
+        .str.strip()
+        .str.lower()
+        .str.replace(r"\\s+", "", regex=True)
+    )
+
+    junk_values = ["", "na", "n/a", "none", "null", "nan"]
+    cleaned = cleaned.mask(cleaned.isin(junk_values), pd.NA)
+
+    valid_email_mask = cleaned.str.match(email_pattern, na=False).fillna(False)
+
+    df["{column}"] = cleaned.where(
+        valid_email_mask | cleaned.isna(),
+        original
+    )
+
+    missing_mask = cleaned.isna()
+    comparison_mask = (
+        original.fillna("").astype(str)
+        != cleaned.fillna("").astype(str)
+    ).fillna(False)
+
+    cleaned_mask = valid_email_mask & comparison_mask
+    valid_mask = valid_email_mask & ~cleaned_mask
+    invalid_mask = cleaned.notna() & ~valid_email_mask
+
+    mask_df.loc[missing_mask, "{column}"] = "missing"
+    mask_df.loc[valid_mask, "{column}"] = "valid"
+    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
+    mask_df.loc[invalid_mask, "{column}"] = "invalid format"
+''',
+
+        "fill_missing_values_in_column": f'''
+    # Fill Missing: {column}
+    original = df["{column}"].copy()
+
+    missing_mask = original.isna()
+    valid_mask = original.notna()
+
+    df["{column}"] = df["{column}"].fillna("Unknown")
+
+    mask_df.loc[missing_mask, "{column}"] = "cleaned"
+    mask_df.loc[valid_mask, "{column}"] = "valid"
+''',
+
+        "convert_to_titlecase": f'''
+    # Convert to Title Case: {column}
+    original = df["{column}"].copy()
+
+    transformed = original.map(
+        lambda value: value.title() if isinstance(value, str) else value
+    )
+
+    df["{column}"] = transformed
+
+    missing_mask = original.isna()
+    cleaned_mask = (
+        original.notna()
+        & original.map(lambda value: isinstance(value, str))
+        & (original.astype(str) != transformed.astype(str))
+    )
+    valid_mask = original.notna() & ~cleaned_mask
+
+    mask_df.loc[missing_mask, "{column}"] = "missing"
+    mask_df.loc[valid_mask, "{column}"] = "valid"
+    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
+''',
+
+        "convert_column_to_lowercase": f'''
+    # Convert to Lowercase: {column}
+    original = df["{column}"].copy()
+
+    transformed = original.map(
+        lambda value: value.lower() if isinstance(value, str) else value
+    )
+
+    df["{column}"] = transformed
+
+    missing_mask = original.isna()
+    cleaned_mask = (
+        original.notna()
+        & original.map(lambda value: isinstance(value, str))
+        & (original.astype(str) != transformed.astype(str))
+    )
+    valid_mask = original.notna() & ~cleaned_mask
+
+    mask_df.loc[missing_mask, "{column}"] = "missing"
+    mask_df.loc[valid_mask, "{column}"] = "valid"
+    mask_df.loc[cleaned_mask, "{column}"] = "cleaned"
+'''
+    }
+
+    return templates.get(
+        function_name,
+        f'''
+    # Unsupported transformation: {function_name} on {column}
+'''
+    )
+
+
 # =========================
 # S1v1 - Streamlit Page Setup
 # =========================
@@ -1212,6 +1511,9 @@ with st.container(border=True):
 
         if "preview_mask" not in st.session_state:
             st.session_state.preview_mask = st.session_state.dirty_mask.copy()
+
+        if "transformation_steps" not in st.session_state:
+            st.session_state.transformation_steps = []
 
         # S4.4v2 - Generate Data Button
         if st.button("Generate Data", use_container_width=True):
@@ -1359,6 +1661,7 @@ with st.container(border=True):
                 selected_column,
                 st.session_state.preview_mask
             )
+            add_transformation_step("convert_col_to_numeric", selected_column)
 
         if st.button("Convert to Datetime", key="col_convert_datetime", use_container_width=True):
             st.session_state.preview_df, st.session_state.preview_mask = convert_common_date_patterns(
@@ -1366,6 +1669,8 @@ with st.container(border=True):
                 selected_column,
                 st.session_state.preview_mask
             )
+            add_transformation_step(
+                "convert_common_date_patterns", selected_column)
 
         if st.button("Clean / Validate Email", key="col_clean_validate_email", use_container_width=True):
             st.session_state.preview_df, st.session_state.preview_mask = clean_and_validate_email_column(
@@ -1373,6 +1678,8 @@ with st.container(border=True):
                 selected_column,
                 st.session_state.preview_mask
             )
+            add_transformation_step(
+                "clean_and_validate_email_column", selected_column)
 
         if st.button("Fill Missing", key="col_fill_missing", use_container_width=True):
             st.session_state.preview_df, st.session_state.preview_mask = fill_missing_values_in_column(
@@ -1380,6 +1687,8 @@ with st.container(border=True):
                 selected_column,
                 mask_df=st.session_state.preview_mask
             )
+            add_transformation_step(
+                "fill_missing_values_in_column", selected_column)
 
         if st.button("Convert Currency", key="col_convert_currency", use_container_width=True):
             st.session_state.preview_df, st.session_state.preview_mask = convert_currency_to_numeric(
@@ -1387,6 +1696,8 @@ with st.container(border=True):
                 selected_column,
                 st.session_state.preview_mask
             )
+            add_transformation_step(
+                "convert_currency_to_numeric", selected_column)
 
         if st.button("Convert to Title Case", key="col_convert_title", use_container_width=True):
             st.session_state.preview_df, st.session_state.preview_mask = convert_to_titlecase(
@@ -1394,6 +1705,7 @@ with st.container(border=True):
                 selected_column,
                 st.session_state.preview_mask
             )
+            add_transformation_step("convert_to_titlecase", selected_column)
 
         if st.button("Convert to Lowercase", key="col_convert_lowercase", use_container_width=True):
             st.session_state.preview_df, st.session_state.preview_mask = convert_column_to_lowercase(
@@ -1401,6 +1713,8 @@ with st.container(border=True):
                 selected_column,
                 st.session_state.preview_mask
             )
+            add_transformation_step(
+                "convert_column_to_lowercase", selected_column)
 
         st.write("")
 
@@ -1610,5 +1924,16 @@ with st.container(border=True):
             use_container_width=True
         )
 
+    transformation_code = generate_transformation_code(
+        st.session_state.transformation_steps
+    ).encode("utf-8")
+
+    st.download_button(
+        label="Download Transformation Code",
+        data=transformation_code,
+        file_name="transformation_code.py",
+        mime="text/x-python",
+        use_container_width=True
+    )
 
 st.write("")
