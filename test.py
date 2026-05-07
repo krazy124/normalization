@@ -1114,6 +1114,32 @@ def convert_currency_to_numeric(dataframe, column_name, mask_df=None):
     return df, mask_df
 
 
+# F47v1
+def get_currency_invalid_reason(value):
+    if pd.isna(value):
+        return "Missing currency value"
+
+    value = str(value).strip()
+
+    if value == "":
+        return "Missing currency value"
+
+    cleaned = re.sub(r"[\$,]", "", value)
+
+    converted = pd.to_numeric(cleaned, errors="coerce")
+
+    if pd.notna(converted):
+        return "Invalid format"
+
+    if any(char.isalpha() for char in value):
+        return "Contains text"
+
+    if "?" in value:
+        return "Unknown value"
+
+    return "Invalid currency format"
+
+
 # =========================
 # S1v1 - Streamlit Page Setup
 # =========================
@@ -1497,9 +1523,6 @@ with st.container(border=True):
         if st.button("Return Duplicates", use_container_width=True):
             st.session_state.column_report = "duplicates"
 
-        if st.button("Return Failed Clean Type Rows", use_container_width=True):
-            st.session_state.column_report = "failed_clean_type_rows"
-
         if st.button("Return Invalid Format Report", use_container_width=True):
             st.session_state.column_report = "invalid_format_report"
 
@@ -1539,5 +1562,53 @@ with st.container(border=True):
                 ),
                 use_container_width=True
             )
+
+# =========================
+# S8v1 - Export Reports
+# =========================
+st.write("### Export Reports")
+
+with st.container(border=True):
+
+    export_col1, export_col2, export_col3 = st.columns(3)
+
+    cleaned_csv = st.session_state.dirty_df.to_csv(index=False).encode("utf-8")
+
+    mask_csv = st.session_state.dirty_mask.to_csv(index=False).encode("utf-8")
+
+    invalid_report_df = return_invalid_format_report(
+        st.session_state.dirty_df,
+        st.session_state.dirty_mask
+    )
+
+    invalid_report_csv = invalid_report_df.to_csv(index=False).encode("utf-8")
+
+    with export_col1:
+        st.download_button(
+            label="Download Cleaned Dataset",
+            data=cleaned_csv,
+            file_name="cleaned_dataset.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+
+    with export_col2:
+        st.download_button(
+            label="Download Transformation Mask",
+            data=mask_csv,
+            file_name="transformation_mask.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+
+    with export_col3:
+        st.download_button(
+            label="Download Invalid Format Report",
+            data=invalid_report_csv,
+            file_name="invalid_format_report.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+
 
 st.write("")
