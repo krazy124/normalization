@@ -5,8 +5,9 @@ import base64
 import re
 from pathlib import Path
 
-
 # F1v1
+
+
 def create_or_update_transformation_mask(dataframe, mask_df=None):
     if mask_df is None:
         mask_df = pd.DataFrame(
@@ -32,8 +33,9 @@ def create_or_update_transformation_mask(dataframe, mask_df=None):
 
     return mask_df[dataframe.columns]
 
-
 # F2v1
+
+
 def generate_dirty_data(record_count):
     random.seed(42)
 
@@ -115,8 +117,9 @@ def generate_dirty_data(record_count):
 
     return pd.DataFrame(rows)
 
-
 # F3v1
+
+
 def get_row_count(dataframe):
     return len(dataframe)
 
@@ -125,7 +128,6 @@ def get_row_count(dataframe):
 
 def get_column_count(dataframe):
     return len(dataframe.columns)
-
 
 # F5v1
 
@@ -238,8 +240,9 @@ def get_column_health(dataframe, column_name):
         "Invalid / Unclean Count": invalid_unclean_count,
     }
 
-
 # F12v1
+
+
 def strip_whitespace(dataframe, mask_df=None):
     df = dataframe.copy()
     mask_df = create_or_update_transformation_mask(df, mask_df)
@@ -279,15 +282,69 @@ def drop_duplicates(dataframe, mask_df=None):
 
     return df, mask_df
 
+# F15v1
 
-# F15v2
+
 def convert_to_titlecase(dataframe, column_name, mask_df=None):
-    return run_string_transformation(dataframe=dataframe, column_name=column_name, transformation_function=str.title, mask_df=mask_df)
+    df = dataframe.copy()
+    mask_df = create_or_update_transformation_mask(df, mask_df)
+
+    original = df[column_name].copy()
+
+    if original.dtype == "object" or pd.api.types.is_string_dtype(original):
+        transformed = original.map(
+            lambda value: value.title() if isinstance(value, str) else value
+        )
+
+        df[column_name] = transformed
+
+        missing_mask = original.isna()
+
+        cleaned_mask = (
+            original.notna()
+            & original.map(lambda value: isinstance(value, str))
+            & (original.astype(str) != transformed.astype(str))
+        )
+
+        valid_mask = original.notna() & ~cleaned_mask
+
+        mask_df.loc[missing_mask, column_name] = "missing"
+        mask_df.loc[valid_mask, column_name] = "valid"
+        mask_df.loc[cleaned_mask, column_name] = "cleaned"
+
+    return df, mask_df
+
+# F16v1
 
 
-# F16v2
 def convert_column_to_lowercase(dataframe, column_name, mask_df=None):
-    return run_string_transformation(dataframe=dataframe, column_name=column_name, transformation_function=str.lower, mask_df=mask_df)
+    df = dataframe.copy()
+    mask_df = create_or_update_transformation_mask(df, mask_df)
+
+    original = df[column_name].copy()
+
+    if original.dtype == "object" or pd.api.types.is_string_dtype(original):
+        transformed = original.map(
+            lambda value: value.lower() if isinstance(value, str) else value
+        )
+
+        df[column_name] = transformed
+
+        missing_mask = original.isna()
+
+        cleaned_mask = (
+            original.notna()
+            & original.map(lambda value: isinstance(value, str))
+            & (original.astype(str) != transformed.astype(str))
+        )
+
+        valid_mask = original.notna() & ~cleaned_mask
+
+        mask_df.loc[missing_mask, column_name] = "missing"
+        mask_df.loc[valid_mask, column_name] = "valid"
+        mask_df.loc[cleaned_mask, column_name] = "cleaned"
+
+    return df, mask_df
 
 # F17v1
 
@@ -708,67 +765,6 @@ def clean_and_validate_email_column(dataframe, column_name, mask_df=None):
 
     return df, mask_df
 
-# F27.1v1
-
-
-def run_string_transformation(dataframe, column_name, transformation_function, mask_df=None):
-
-    df = dataframe.copy()
-
-    mask_df = create_or_update_transformation_mask(df, mask_df)
-
-    original = df[column_name].copy()
-
-    if (
-        original.dtype == "object"
-        or pd.api.types.is_string_dtype(original)
-    ):
-
-        transformed = original.map(
-            lambda value:
-            transformation_function(value)
-            if isinstance(value, str)
-            else value
-        )
-
-        df[column_name] = transformed
-
-        missing_mask = original.isna()
-
-        cleaned_mask = (
-            original.notna()
-            & original.map(
-                lambda value: isinstance(value, str)
-            )
-            & (
-                original.astype(str)
-                != transformed.astype(str)
-            )
-        )
-
-        valid_mask = (
-            original.notna()
-            & ~cleaned_mask
-        )
-
-        mask_df.loc[
-            missing_mask,
-            column_name
-        ] = "missing"
-
-        mask_df.loc[
-            valid_mask,
-            column_name
-        ] = "valid"
-
-        mask_df.loc[
-            cleaned_mask,
-            column_name
-        ] = "cleaned"
-
-    return df, mask_df
-
-
 # =========================
 # Preview / Compare Helpers
 # =========================
@@ -1148,7 +1144,6 @@ st.set_page_config(
     layout="wide"
 )
 
-
 # =========================
 # S2v1 - App Styling
 # =========================
@@ -1169,12 +1164,10 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-
 # =========================
 # S3v1 - Main Title
 # =========================
 st.title("Function Test Page")
-
 
 # =========================
 # S4v2 - Dirty Data Display Section
@@ -1251,7 +1244,6 @@ with st.container(border=True):
         # S4.6v1 - Dirty DataFrame Display
         st.dataframe(st.session_state.dirty_df, use_container_width=True)
 
-
 # =========================
 # S5v1 - Data Health Dashboard
 # =========================
@@ -1301,7 +1293,6 @@ with right_panel:
                     column_name,
                     f"{missing_by_column[column_name]:.0f}%"
                 )
-
 
 # =========================
 # S6v2 - Column Transformation Preview
@@ -1401,22 +1392,21 @@ with st.container(border=True):
                 "convert_currency_to_numeric", selected_column)
 
         if st.button("Convert to Title Case", key="col_convert_title", use_container_width=True):
-            st.session_state.preview_df, st.session_state.preview_mask = run_string_transformation(
-                dataframe=st.session_state.preview_df,
-                column_name=selected_column,
-                transformation_function=str.title,
-                mask_df=st.session_state.preview_mask
+            st.session_state.preview_df, st.session_state.preview_mask = convert_to_titlecase(
+                st.session_state.preview_df,
+                selected_column,
+                st.session_state.preview_mask
             )
-            add_transformation_step("string_titlecase", selected_column)
+            add_transformation_step("convert_to_titlecase", selected_column)
 
         if st.button("Convert to Lowercase", key="col_convert_lowercase", use_container_width=True):
-            st.session_state.preview_df, st.session_state.preview_mask = run_string_transformation(
-                dataframe=st.session_state.preview_df,
-                column_name=selected_column,
-                transformation_function=str.lower,
-                mask_df=st.session_state.preview_mask
+            st.session_state.preview_df, st.session_state.preview_mask = convert_column_to_lowercase(
+                st.session_state.preview_df,
+                selected_column,
+                st.session_state.preview_mask
             )
-            add_transformation_step("string_lowercase", selected_column)
+            add_transformation_step(
+                "convert_column_to_lowercase", selected_column)
 
         st.write("")
 
@@ -1510,7 +1500,6 @@ with st.container(border=True):
             st.write("##### After")
             for label, value in after_health.items():
                 st.metric(label, value)
-
 
 # =========================
 # S7v1 - Column Reports
