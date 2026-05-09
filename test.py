@@ -239,6 +239,69 @@ def get_column_health(dataframe, column_name):
     }
 
 
+class Transformation:
+    @staticmethod
+    def to_int_keep_failed(series):
+        original = series.copy()
+        cleaned = original.astype("string").str.strip()
+        converted = pd.to_numeric(cleaned, errors="coerce")
+        integer_mask = converted.notna() & (converted % 1 == 0)
+
+        result = original.astype("object").copy()
+        result.loc[integer_mask] = converted.loc[integer_mask].astype("Int64")
+        return result
+
+    @staticmethod
+    def common_date_patterns(series):
+        original = series.copy()
+        cleaned = original.astype("string").str.strip()
+        converted = pd.to_datetime(cleaned, errors="coerce")
+
+        result = original.astype("object").copy()
+        result.loc[converted.notna()] = converted.loc[converted.notna()]
+        return result
+
+    @staticmethod
+    def clean_validate_email(series):
+        email_pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+        original = series.copy()
+
+        cleaned = (
+            original
+            .astype("string")
+            .str.strip()
+            .str.lower()
+            .str.replace(r"\s+", "", regex=True)
+        )
+
+        junk_values = ["", "na", "n/a", "none", "null", "nan"]
+        cleaned = cleaned.mask(cleaned.isin(junk_values), pd.NA)
+
+        valid_email_mask = cleaned.str.match(email_pattern, na=False)
+
+        return cleaned.where(
+            valid_email_mask | cleaned.isna(),
+            original
+        )
+
+    @staticmethod
+    def currency_to_numeric(series):
+        original = series.copy()
+
+        cleaned = (
+            original
+            .astype("string")
+            .str.replace(r"[\$,]", "", regex=True)
+            .str.strip()
+        )
+
+        converted = pd.to_numeric(cleaned, errors="coerce")
+
+        result = original.astype("object").copy()
+        result.loc[converted.notna()] = converted.loc[converted.notna()]
+        return result
+
+
 # F12v1
 def strip_whitespace(dataframe, mask_df=None):
     df = dataframe.copy()
@@ -662,49 +725,29 @@ def convert_common_date_patterns(dataframe, column_name, mask_df=None):
 # Email Cleaning / Validation
 # =========================
 
-# F27v1
 
-
-def clean_and_validate_email_column(dataframe, column_name, mask_df=None):
+# F27.1v2
+def run_column_transformation(dataframe, column_name, transformation_function, mask_df=None):
     df = dataframe.copy()
     mask_df = create_or_update_transformation_mask(df, mask_df)
 
-    email_pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
-
     original = df[column_name].copy()
+    transformed = transformation_function(original)
 
-    cleaned = (
-        df[column_name]
-        .astype("string")
-        .str.strip()
-        .str.lower()
-        .str.replace(r"\s+", "", regex=True)
+    df[column_name] = transformed
+
+    missing_mask = original.isna() | original.astype(str).str.strip().eq("")
+
+    cleaned_mask = (
+        ~missing_mask
+        & (original.astype(str) != transformed.astype(str))
     )
 
-    junk_values = ["", "na", "n/a", "none", "null", "nan"]
-    cleaned = cleaned.mask(cleaned.isin(junk_values), pd.NA)
-
-    valid_email_mask = cleaned.str.match(email_pattern, na=False)
-
-    df[column_name] = cleaned.where(
-        valid_email_mask | cleaned.isna(), original)
-
-    missing_mask = cleaned.isna()
-    valid_email_mask = valid_email_mask.fillna(False)
-
-    comparison_mask = (
-        original.fillna("").astype(str)
-        != cleaned.fillna("").astype(str)
-    ).fillna(False)
-
-    cleaned_mask = valid_email_mask & comparison_mask
-    valid_mask = valid_email_mask & ~cleaned_mask
-    invalid_mask = cleaned.notna() & ~valid_email_mask
+    valid_mask = ~missing_mask & ~cleaned_mask
 
     mask_df.loc[missing_mask, column_name] = "missing"
     mask_df.loc[valid_mask, column_name] = "valid"
     mask_df.loc[cleaned_mask, column_name] = "cleaned"
-    mask_df.loc[invalid_mask, column_name] = "invalid format"
 
     return df, mask_df
 
