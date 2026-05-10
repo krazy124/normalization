@@ -344,34 +344,35 @@ class Transformation:
 
         return result, success_mask
 
-# F12v1
+    @staticmethod
+    def strip_whitespace(dataframe):
+        df = dataframe.copy()
 
+        for column_name in df.columns:
+            if (
+                df[column_name].dtype == "object"
+                or pd.api.types.is_string_dtype(df[column_name])
+            ):
+                df[column_name] = df[column_name].map(
+                    lambda value: value.strip() if isinstance(value, str) else value
+                )
 
-def strip_whitespace(dataframe, mask_df=None):
-    df = dataframe.copy()
-    mask_df = create_or_update_transformation_mask(df, mask_df)
+        return df
 
-    for column_name in df.columns:
-        if df[column_name].dtype == "object" or pd.api.types.is_string_dtype(df[column_name]):
-            df[column_name] = df[column_name].map(
-                lambda value: value.strip() if isinstance(value, str) else value
-            )
+    @staticmethod
+    def convert_to_lowercase(dataframe):
+        df = dataframe.copy()
 
-    return df, mask_df
+        for column_name in df.columns:
+            if (
+                df[column_name].dtype == "object"
+                or pd.api.types.is_string_dtype(df[column_name])
+            ):
+                df[column_name] = df[column_name].map(
+                    lambda value: value.lower() if isinstance(value, str) else value
+                )
 
-
-# F13v1
-def convert_to_lowercase(dataframe, mask_df=None):
-    df = dataframe.copy()
-    mask_df = create_or_update_transformation_mask(df, mask_df)
-
-    for column_name in df.columns:
-        if df[column_name].dtype == "object" or pd.api.types.is_string_dtype(df[column_name]):
-            df[column_name] = df[column_name].map(
-                lambda value: value.lower() if isinstance(value, str) else value
-            )
-
-    return df, mask_df
+        return df
 
 
 # F14v1
@@ -407,11 +408,6 @@ def fill_missing_values_in_column(
     return df, mask_df
 
 
-# =========================
-# Email Cleaning / Validation
-# =========================
-
-
 # F27.1v4
 def run_column_transformation(dataframe, column_name, transformation_function, mask_df=None):
     df = dataframe.copy()
@@ -435,11 +431,6 @@ def run_column_transformation(dataframe, column_name, transformation_function, m
     mask_df.loc[invalid_mask, column_name] = "invalid format"
 
     return df, mask_df
-
-
-# =========================
-# Preview / Compare Helpers
-# =========================
 
 
 # F28v1
@@ -472,11 +463,8 @@ def sort_transformation_preview(compare_df, original_column, preview_column):
 
     return sorted_df.drop(columns=["_sort_group"])
 
-# =========================
-# Reports / Diagnostics
-# =========================
 
-
+# =========================Reports / Diagnostics=========================
 # F29v1
 def return_transformation_mask(mask_df):
     return mask_df.copy()
@@ -516,12 +504,10 @@ def return_invalid_format_report(dataframe, mask_df):
 
     return pd.DataFrame(report_rows)
 
-# =========================
-# Invalid Format Reason Helpers
-# =========================
-
-
+# =========================Invalid Format Reason Helpers=========================
 # F33v1
+
+
 def get_invalid_format_reason(column_name, value):
     column_lower = column_name.lower()
 
@@ -645,12 +631,10 @@ def get_currency_invalid_reason(value):
 
     return "Invalid currency format"
 
-# =========================
-# Transformation Code Generation
-# =========================
-
-
+# =========================Transformation Code Generation=========================
 # F37v1
+
+
 def add_transformation_step(function_name, column_name):
     if "transformation_steps" not in st.session_state:
         st.session_state.transformation_steps = []
@@ -795,9 +779,7 @@ def get_pure_transformation_code(function_name, column_name):
     )
 
 
-# =========================
-# S1v1 - Streamlit Page Setup
-# =========================
+# =========================S1v1 - Streamlit Page Setup=========================
 st.set_page_config(
     page_title="Function Test Page",
     page_icon="🧪",
@@ -805,9 +787,7 @@ st.set_page_config(
 )
 
 
-# =========================
-# S2v1 - App Styling
-# =========================
+# =========================S2v1 - App Styling=========================
 image_path = Path("assets/matrix_background.png")
 encoded_image = base64.b64encode(image_path.read_bytes()).decode()
 
@@ -826,15 +806,11 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# =========================
-# S3v1 - Main Title
-# =========================
+# =========================S3v1 - Main Title=========================
 st.title("Function Test Page")
 
 
-# =========================
-# S4v2 - Dirty Data Display Section
-# =========================
+# =========================S4v2 - Dirty Data Display Section=========================
 st.write("### Data Frame Transformation Section")
 
 with st.container(border=True):
@@ -885,15 +861,13 @@ with st.container(border=True):
 
         # S4.5v2 - DataFrame Transformation Buttons
         if st.button("Strip Whitespace", use_container_width=True):
-            st.session_state.dirty_df, st.session_state.dirty_mask = strip_whitespace(
-                st.session_state.dirty_df,
-                st.session_state.dirty_mask
+            st.session_state.dirty_df = Transformation.strip_whitespace(
+                st.session_state.dirty_df
             )
 
         if st.button("Convert to Lowercase", use_container_width=True):
-            st.session_state.dirty_df, st.session_state.dirty_mask = convert_to_lowercase(
-                st.session_state.dirty_df,
-                st.session_state.dirty_mask
+            st.session_state.dirty_df = Transformation.convert_to_lowercase(
+                st.session_state.dirty_df
             )
 
         if st.button("Drop Duplicates", use_container_width=True):
@@ -908,9 +882,7 @@ with st.container(border=True):
         st.dataframe(st.session_state.dirty_df, use_container_width=True)
 
 
-# =========================
-# S5v1 - Data Health Dashboard
-# =========================
+# =========================S5v1 - Data Health Dashboard=========================
 summary = get_data_health_summary(st.session_state.dirty_df)
 missing_by_column = summary["missing_by_column"]
 
@@ -919,49 +891,47 @@ with st.container(border=True):
     # S5.1v1 - Dashboard Layout Columns
     left_panel, right_panel = st.columns([1, 2])
 
-with left_panel:
-    with st.container(border=True):
+    with left_panel:
+        with st.container(border=True):
 
-        # S5.2v1 - Row Health Metrics
-        st.write("#### Row Health")
+            # S5.2v1 - Row Health Metrics
+            st.write("#### Row Health")
 
-        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+            metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
 
-        with metric_col1:
-            st.metric("Rows", summary["row_count"])
+            with metric_col1:
+                st.metric("Rows", summary["row_count"])
 
-        with metric_col2:
-            st.metric("Duplicates", summary["duplicate_count"])
+            with metric_col2:
+                st.metric("Duplicates", summary["duplicate_count"])
 
-        with metric_col3:
-            st.metric("Rows w/ Missing", summary["rows_with_missing"])
+            with metric_col3:
+                st.metric("Rows w/ Missing", summary["rows_with_missing"])
 
-        with metric_col4:
-            st.metric(
-                "Incomplete Rows %",
-                f"{summary['missing_row_percent']:.0f}%"
-            )
-
-with right_panel:
-    with st.container(border=True):
-
-        # S5.3v1 - Column Missing Rate Metrics
-        st.write("#### Column Missing Rate")
-
-        missing_cols = st.columns(10)
-        column_names = list(missing_by_column.index)
-
-        for index, column_name in enumerate(column_names):
-            with missing_cols[index % 10]:
+            with metric_col4:
                 st.metric(
-                    column_name,
-                    f"{missing_by_column[column_name]:.0f}%"
+                    "Incomplete Rows %",
+                    f"{summary['missing_row_percent']:.0f}%"
                 )
 
+    with right_panel:
+        with st.container(border=True):
 
-# =========================
-# S6v2 - Column Transformation Preview
-# =========================
+            # S5.3v1 - Column Missing Rate Metrics
+            st.write("#### Column Missing Rate")
+
+            missing_cols = st.columns(10)
+            column_names = list(missing_by_column.index)
+
+            for index, column_name in enumerate(column_names):
+                with missing_cols[index % 10]:
+                    st.metric(
+                        column_name,
+                        f"{missing_by_column[column_name]:.0f}%"
+                    )
+
+
+# =========================S6v2 - Column Transformation Preview=========================
 st.write("### Column Transformations")
 
 with st.container(border=True):
@@ -1182,9 +1152,7 @@ with st.container(border=True):
                 st.metric(label, value)
 
 
-# =========================
-# S7v1 - Column Reports
-# =========================
+# =========================S7v1 - Column Reports=========================
 st.write("### Column Reports")
 
 with st.container(border=True):
@@ -1249,9 +1217,7 @@ with st.container(border=True):
                 use_container_width=True
             )
 
-# =========================
-# S8v1 - Export Reports
-# =========================
+# =========================S8v1 - Export Reports=========================
 st.write("### Export Reports")
 
 with st.container(border=True):
