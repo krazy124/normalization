@@ -207,7 +207,7 @@ with st.container(border=True):
 
     with transform_col:
 
-        # S6.5v4 - Column Transformation Buttons
+        # S6.5v5 - Column Transformation Buttons
         st.write("#### Transformations")
         st.write("")
         st.write("")
@@ -216,8 +216,7 @@ with st.container(border=True):
             st.session_state.preview_df, st.session_state.preview_mask = run_column_transformation(
                 dataframe=st.session_state.preview_df,
                 column_name=selected_column,
-                transformation_function=lambda series: pd.to_numeric(series, errors="coerce").where(
-                    pd.to_numeric(series, errors="coerce").notna(), series),
+                transformation_function=Transformation.to_float_keep_failed,
                 mask_df=st.session_state.preview_mask
             )
             add_transformation_step("convert_col_to_numeric", selected_column)
@@ -256,8 +255,7 @@ with st.container(border=True):
             st.session_state.preview_df, st.session_state.preview_mask = run_column_transformation(
                 dataframe=st.session_state.preview_df,
                 column_name=selected_column,
-                transformation_function=lambda series: series.fillna(
-                    "Unknown"),
+                transformation_function=Transformation.fill_missing_unknown,
                 mask_df=st.session_state.preview_mask
             )
             add_transformation_step(
@@ -277,9 +275,7 @@ with st.container(border=True):
             st.session_state.preview_df, st.session_state.preview_mask = run_column_transformation(
                 dataframe=st.session_state.preview_df,
                 column_name=selected_column,
-                transformation_function=lambda series: series.map(
-                    lambda value: value.title() if isinstance(value, str) else value
-                ),
+                transformation_function=Transformation.to_titlecase,
                 mask_df=st.session_state.preview_mask
             )
             add_transformation_step("convert_to_titlecase", selected_column)
@@ -288,9 +284,7 @@ with st.container(border=True):
             st.session_state.preview_df, st.session_state.preview_mask = run_column_transformation(
                 dataframe=st.session_state.preview_df,
                 column_name=selected_column,
-                transformation_function=lambda series: series.map(
-                    lambda value: value.lower() if isinstance(value, str) else value
-                ),
+                transformation_function=Transformation.to_lowercase,
                 mask_df=st.session_state.preview_mask
             )
             add_transformation_step(
@@ -305,6 +299,7 @@ with st.container(border=True):
             st.session_state.preview_df = st.session_state.dirty_df.copy()
             st.session_state.preview_mask = st.session_state.dirty_mask.copy()
             st.rerun()
+        st.write("")
 
     with compare_col:
 

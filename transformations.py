@@ -102,50 +102,46 @@ class Transformation:
 
     @staticmethod
     def to_lowercase(series):
-        result = series.map(
-            lambda value: value.lower() if isinstance(value, str) else value
-        )
-
+        result = series.map(lambda value: value.lower()
+                            if isinstance(value, str) else value)
         success_mask = pd.Series(True, index=series.index)
-
         return result, success_mask
 
     @staticmethod
     def fill_missing_unknown(series):
         result = series.fillna("Unknown")
         success_mask = pd.Series(True, index=series.index)
-
         return result, success_mask
 
     @staticmethod
     def strip_whitespace(dataframe):
         df = dataframe.copy()
-
         for column_name in df.columns:
-            if (
-                df[column_name].dtype == "object"
-                or pd.api.types.is_string_dtype(df[column_name])
-            ):
-                df[column_name] = df[column_name].map(
-                    lambda value: value.strip() if isinstance(value, str) else value
-                )
-
+            if (df[column_name].dtype == "object" or pd.api.types.is_string_dtype(df[column_name])):
+                df[column_name] = df[column_name].map(lambda value: value.strip()
+                                                      if isinstance(value, str)
+                                                      else value)
         return df
 
     @staticmethod
     def convert_to_lowercase(dataframe):
         df = dataframe.copy()
-
         for column_name in df.columns:
-            if (
-                df[column_name].dtype == "object"
-                or pd.api.types.is_string_dtype(df[column_name])
-            ):
+            if (df[column_name].dtype == "object" or pd.api.types.is_string_dtype(df[column_name])):
                 df[column_name] = df[column_name].map(
-                    lambda value: value.lower() if isinstance(value, str) else value
-                )
-
+                    lambda value: value.lower() if isinstance(value, str) else value)
         return df
+
+    @staticmethod
+    def to_float_keep_failed(series):
+        original = series.copy()
+        converted = pd.to_numeric(original, errors="coerce")
+        success_mask = converted.notna()
+
+        result = original.astype("object").copy()
+        result.loc[success_mask] = converted.loc[success_mask]
+
+        return result, success_mask
 
 
 # F1v1
@@ -373,7 +369,7 @@ def get_column_health(dataframe, column_name):
     }
 
 
-# F14v1
+# F12v1
 def drop_duplicates(dataframe, mask_df=None):
     df = dataframe.copy()
     mask_df = create_or_update_transformation_mask(df, mask_df)
@@ -384,7 +380,7 @@ def drop_duplicates(dataframe, mask_df=None):
     return df, mask_df
 
 
-# F17v1
+# F13v1
 def fill_missing_values_in_column(
     dataframe,
     column_name,
@@ -406,7 +402,7 @@ def fill_missing_values_in_column(
     return df, mask_df
 
 
-# F27.1v4
+# F14v1
 def run_column_transformation(dataframe, column_name, transformation_function, mask_df=None):
     df = dataframe.copy()
     mask_df = create_or_update_transformation_mask(df, mask_df)
@@ -431,7 +427,7 @@ def run_column_transformation(dataframe, column_name, transformation_function, m
     return df, mask_df
 
 
-# F28v1
+# F15v1
 def sort_transformation_preview(compare_df, original_column, preview_column):
     sorted_df = compare_df.copy()
 
@@ -463,22 +459,22 @@ def sort_transformation_preview(compare_df, original_column, preview_column):
 
 
 # =========================Column Reports Sections=========================
-# F29v1
+# F16v1
 def return_transformation_mask(mask_df):
     return mask_df.copy()
 
 
-# F30v1
+# F17v1
 def return_rows_with_missing_values(dataframe):
     return dataframe[dataframe.isna().any(axis=1)]
 
 
-# F31v1
+# F18v1
 def return_duplicates(dataframe):
     return dataframe[dataframe.duplicated()]
 
 
-# F32v1
+# F19v1
 def return_invalid_format_report(dataframe, mask_df):
     report_rows = []
 
@@ -504,7 +500,7 @@ def return_invalid_format_report(dataframe, mask_df):
 
 
 # =========================Invalid Format Section=========================
-# F33v1
+# F20v1
 def get_invalid_format_reason(column_name, value):
     column_lower = column_name.lower()
 
@@ -520,7 +516,7 @@ def get_invalid_format_reason(column_name, value):
     return "Invalid format"
 
 
-# F34v1
+# F21v1
 def get_email_invalid_reason(value):
     email_pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
 
@@ -561,7 +557,7 @@ def get_email_invalid_reason(value):
     return "Invalid format"
 
 
-# F35v1
+# F22v1
 def get_datetime_invalid_reason(value):
     if pd.isna(value):
         return "Missing date"
@@ -603,7 +599,7 @@ def get_datetime_invalid_reason(value):
     return "Unrecognized date format"
 
 
-# F36v1
+# F23v1
 def get_currency_invalid_reason(value):
     if pd.isna(value):
         return "Missing currency value"
@@ -630,7 +626,7 @@ def get_currency_invalid_reason(value):
 
 
 # =========================Transformation Code Generation=========================
-# F38v1
+# F24v1
 def generate_transformation_code(transformation_steps):
     code_lines = [
         "import pandas as pd",
@@ -657,48 +653,31 @@ def generate_transformation_code(transformation_steps):
     return "\n".join(code_lines)
 
 
-# F39v1
+# F25v2
 def get_pure_transformation_code(function_name, column_name):
     templates = {
         "convert_col_to_numeric": f'''
     # Convert to Float: {column_name}
     converted = pd.to_numeric(df["{column_name}"], errors="coerce")
-
-    df["{column_name}"] = converted.where(
-        converted.notna(),
-        df["{column_name}"]
-    )
+    df["{column_name}"] = converted.where(converted.notna(), df["{column_name}"])
 ''',
 
         "convert_to_int_keep_failed": f'''
     # Convert to Int: {column_name}
-    cleaned = df["{column_name}"].astype("string").str.strip()
-    converted = pd.to_numeric(cleaned, errors="coerce")
-
-    integer_mask = converted.notna() & (converted % 1 == 0)
-
-    result = df["{column_name}"].astype("object").copy()
-    result.loc[integer_mask] = converted.loc[integer_mask].astype("Int64")
-
-    df["{column_name}"] = result
+    converted = pd.to_numeric(df["{column_name}"].astype("string").str.strip(), errors="coerce")
+    integer_converted = converted.where(converted % 1 == 0)
+    df["{column_name}"] = integer_converted.astype("Int64").where(integer_converted.notna(), df["{column_name}"])
 ''',
 
         "convert_common_date_patterns": f'''
     # Convert to Datetime: {column_name}
-    cleaned = df["{column_name}"].astype("string").str.strip()
-    converted = pd.to_datetime(cleaned, errors="coerce")
-
-    result = df["{column_name}"].astype("object").copy()
-    result.loc[converted.notna()] = converted.loc[converted.notna()]
-
-    df["{column_name}"] = result
+    converted = pd.to_datetime(df["{column_name}"].astype("string").str.strip(), errors="coerce")
+    df["{column_name}"] = converted.where(converted.notna(), df["{column_name}"])
 ''',
 
         "clean_and_validate_email_column": f'''
     # Clean / Validate Email: {column_name}
     email_pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{{2,}}$"
-
-    original = df["{column_name}"].copy()
 
     cleaned = (
         df["{column_name}"]
@@ -711,12 +690,8 @@ def get_pure_transformation_code(function_name, column_name):
     junk_values = ["", "na", "n/a", "none", "null", "nan"]
     cleaned = cleaned.mask(cleaned.isin(junk_values), pd.NA)
 
-    valid_email_mask = cleaned.str.match(email_pattern, na=False).fillna(False)
-
-    df["{column_name}"] = cleaned.where(
-        valid_email_mask | cleaned.isna(),
-        original
-    )
+    valid_email = cleaned.str.match(email_pattern, na=False)
+    df["{column_name}"] = cleaned.where(valid_email | cleaned.isna(), df["{column_name}"])
 ''',
 
         "fill_missing_values_in_column": f'''
@@ -734,11 +709,7 @@ def get_pure_transformation_code(function_name, column_name):
     )
 
     converted = pd.to_numeric(cleaned, errors="coerce")
-
-    result = df["{column_name}"].astype("object").copy()
-    result.loc[converted.notna()] = converted.loc[converted.notna()]
-
-    df["{column_name}"] = result
+    df["{column_name}"] = converted.where(converted.notna(), df["{column_name}"])
 ''',
 
         "convert_to_titlecase": f'''
