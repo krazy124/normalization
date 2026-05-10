@@ -246,12 +246,33 @@ class Transformation:
     @staticmethod
     def common_date_patterns(series):
         original = series.copy()
-        cleaned = original.astype("string").str.strip()
-        converted = pd.to_datetime(cleaned, errors="coerce")
-        success_mask = converted.notna()
+        cleaned = original.astype(str).str.strip()
 
         result = original.astype("object").copy()
-        result.loc[success_mask] = converted.loc[success_mask]
+        success_mask = pd.Series(False, index=series.index)
+
+        date_patterns = [
+            (r"^\d{4}-\d{2}-\d{2}$", "%Y-%m-%d"),
+            (r"^\d{2}-\d{2}-\d{4}$", "%m-%d-%Y"),
+            (r"^\d{2}/\d{2}/\d{4}$", "%m/%d/%Y"),
+            (r"^[a-zA-Z]+\s+\d{1,2}\s+\d{4}$", "%B %d %Y"),
+            (r"^\d{4}/\d{2}/\d{2}$", "%Y/%m/%d")
+        ]
+
+        for pattern, date_format in date_patterns:
+            pattern_mask = cleaned.str.match(pattern, na=False) & ~success_mask
+
+            converted = pd.to_datetime(
+                cleaned[pattern_mask],
+                format=date_format,
+                errors="coerce"
+            )
+
+            converted_mask = converted.notna()
+            converted_indexes = converted[converted_mask].index
+
+            result.loc[converted_indexes] = converted.loc[converted_indexes]
+            success_mask.loc[converted_indexes] = True
 
         return result, success_mask
 
@@ -385,224 +406,6 @@ def fill_missing_values_in_column(
 
     return df, mask_df
 
-
-# F21v1
-def convert_iso_date_pattern(dataframe, column_name, mask_df=None):
-    df = dataframe.copy()
-    mask_df = create_or_update_transformation_mask(df, mask_df)
-
-    original = df[column_name].copy()
-    df[column_name] = df[column_name].astype("object")
-
-    cleaned = original.astype(str).str.strip()
-    pattern_mask = cleaned.str.match(r"^\d{4}-\d{2}-\d{2}$", na=False)
-
-    converted = pd.to_datetime(
-        cleaned[pattern_mask],
-        format="%Y-%m-%d",
-        errors="coerce"
-    )
-
-    valid_pattern_mask = pattern_mask.copy()
-    valid_pattern_mask.loc[pattern_mask] = converted.notna()
-
-    df.loc[valid_pattern_mask, column_name] = converted[converted.notna()]
-
-    missing_mask = original.isna()
-    cleaned_mask = valid_pattern_mask & (
-        original.astype(str) != df[column_name].astype(str)
-    )
-    valid_mask = valid_pattern_mask & ~cleaned_mask
-    invalid_mask = pattern_mask & ~valid_pattern_mask
-
-    mask_df.loc[missing_mask, column_name] = "missing"
-    mask_df.loc[valid_mask, column_name] = "valid"
-    mask_df.loc[cleaned_mask, column_name] = "cleaned"
-    mask_df.loc[invalid_mask, column_name] = "invalid format"
-
-    return df, mask_df
-
-
-# F22v1
-def convert_us_dash_date_pattern(dataframe, column_name, mask_df=None):
-    df = dataframe.copy()
-    mask_df = create_or_update_transformation_mask(df, mask_df)
-
-    original = df[column_name].copy()
-    df[column_name] = df[column_name].astype("object")
-
-    cleaned = original.astype(str).str.strip()
-    pattern_mask = cleaned.str.match(r"^\d{2}-\d{2}-\d{4}$", na=False)
-
-    converted = pd.to_datetime(
-        cleaned[pattern_mask],
-        format="%m-%d-%Y",
-        errors="coerce"
-    )
-
-    valid_pattern_mask = pattern_mask.copy()
-    valid_pattern_mask.loc[pattern_mask] = converted.notna()
-
-    df.loc[valid_pattern_mask, column_name] = converted[converted.notna()]
-
-    missing_mask = original.isna()
-    cleaned_mask = valid_pattern_mask & (
-        original.astype(str) != df[column_name].astype(str)
-    )
-    valid_mask = valid_pattern_mask & ~cleaned_mask
-    invalid_mask = pattern_mask & ~valid_pattern_mask
-
-    mask_df.loc[missing_mask, column_name] = "missing"
-    mask_df.loc[valid_mask, column_name] = "valid"
-    mask_df.loc[cleaned_mask, column_name] = "cleaned"
-    mask_df.loc[invalid_mask, column_name] = "invalid format"
-
-    return df, mask_df
-
-
-# F23v1
-def convert_us_slash_date_pattern(dataframe, column_name, mask_df=None):
-    df = dataframe.copy()
-    mask_df = create_or_update_transformation_mask(df, mask_df)
-
-    original = df[column_name].copy()
-    df[column_name] = df[column_name].astype("object")
-
-    cleaned = original.astype(str).str.strip()
-    pattern_mask = cleaned.str.match(r"^\d{2}/\d{2}/\d{4}$", na=False)
-
-    converted = pd.to_datetime(
-        cleaned[pattern_mask],
-        format="%m/%d/%Y",
-        errors="coerce"
-    )
-
-    valid_pattern_mask = pattern_mask.copy()
-    valid_pattern_mask.loc[pattern_mask] = converted.notna()
-
-    df.loc[valid_pattern_mask, column_name] = converted[converted.notna()]
-
-    missing_mask = original.isna()
-    cleaned_mask = valid_pattern_mask & (
-        original.astype(str) != df[column_name].astype(str)
-    )
-    valid_mask = valid_pattern_mask & ~cleaned_mask
-    invalid_mask = pattern_mask & ~valid_pattern_mask
-
-    mask_df.loc[missing_mask, column_name] = "missing"
-    mask_df.loc[valid_mask, column_name] = "valid"
-    mask_df.loc[cleaned_mask, column_name] = "cleaned"
-    mask_df.loc[invalid_mask, column_name] = "invalid format"
-
-    return df, mask_df
-
-
-# F24v1
-def convert_text_month_date_pattern(dataframe, column_name, mask_df=None):
-    df = dataframe.copy()
-    mask_df = create_or_update_transformation_mask(df, mask_df)
-
-    original = df[column_name].copy()
-    df[column_name] = df[column_name].astype("object")
-
-    cleaned = original.astype(str).str.strip().str.lower()
-    pattern_mask = cleaned.str.match(
-        r"^[a-zA-Z]+\s+\d{1,2}\s+\d{4}$",
-        na=False
-    )
-
-    converted = pd.to_datetime(
-        cleaned[pattern_mask],
-        format="%B %d %Y",
-        errors="coerce"
-    )
-
-    valid_pattern_mask = pattern_mask.copy()
-    valid_pattern_mask.loc[pattern_mask] = converted.notna()
-
-    df.loc[valid_pattern_mask, column_name] = converted[converted.notna()]
-
-    missing_mask = original.isna()
-    cleaned_mask = valid_pattern_mask & (
-        original.astype(str) != df[column_name].astype(str)
-    )
-    valid_mask = valid_pattern_mask & ~cleaned_mask
-    invalid_mask = pattern_mask & ~valid_pattern_mask
-
-    mask_df.loc[missing_mask, column_name] = "missing"
-    mask_df.loc[valid_mask, column_name] = "valid"
-    mask_df.loc[cleaned_mask, column_name] = "cleaned"
-    mask_df.loc[invalid_mask, column_name] = "invalid format"
-
-    return df, mask_df
-
-
-# F25v1
-def convert_iso_slash_date_pattern(dataframe, column_name, mask_df=None):
-    df = dataframe.copy()
-    mask_df = create_or_update_transformation_mask(df, mask_df)
-
-    original = df[column_name].copy()
-    df[column_name] = df[column_name].astype("object")
-
-    cleaned = original.astype(str).str.strip()
-    pattern_mask = cleaned.str.match(r"^\d{4}/\d{2}/\d{2}$", na=False)
-
-    converted = pd.to_datetime(
-        cleaned[pattern_mask],
-        format="%Y/%m/%d",
-        errors="coerce"
-    )
-
-    valid_pattern_mask = pattern_mask.copy()
-    valid_pattern_mask.loc[pattern_mask] = converted.notna()
-
-    df.loc[valid_pattern_mask, column_name] = converted[converted.notna()]
-
-    missing_mask = original.isna()
-    cleaned_mask = valid_pattern_mask & (
-        original.astype(str) != df[column_name].astype(str)
-    )
-    valid_mask = valid_pattern_mask & ~cleaned_mask
-    invalid_mask = pattern_mask & ~valid_pattern_mask
-
-    mask_df.loc[missing_mask, column_name] = "missing"
-    mask_df.loc[valid_mask, column_name] = "valid"
-    mask_df.loc[cleaned_mask, column_name] = "cleaned"
-    mask_df.loc[invalid_mask, column_name] = "invalid format"
-
-    return df, mask_df
-
-
-# F26v1
-def convert_common_date_patterns(dataframe, column_name, mask_df=None):
-    df = dataframe.copy()
-    mask_df = create_or_update_transformation_mask(df, mask_df)
-
-    original = df[column_name].copy()
-
-    df, mask_df = convert_iso_date_pattern(df, column_name, mask_df)
-    df, mask_df = convert_us_dash_date_pattern(df, column_name, mask_df)
-    df, mask_df = convert_us_slash_date_pattern(df, column_name, mask_df)
-    df, mask_df = convert_text_month_date_pattern(df, column_name, mask_df)
-    df, mask_df = convert_iso_slash_date_pattern(df, column_name, mask_df)
-
-    final_converted = pd.to_datetime(df[column_name], errors="coerce")
-
-    missing_mask = original.isna()
-    valid_or_cleaned_mask = original.notna() & final_converted.notna()
-    cleaned_mask = valid_or_cleaned_mask & (
-        original.astype(str) != df[column_name].astype(str)
-    )
-    valid_mask = valid_or_cleaned_mask & ~cleaned_mask
-    invalid_mask = original.notna() & final_converted.isna()
-
-    mask_df.loc[missing_mask, column_name] = "missing"
-    mask_df.loc[valid_mask, column_name] = "valid"
-    mask_df.loc[cleaned_mask, column_name] = "cleaned"
-    mask_df.loc[invalid_mask, column_name] = "invalid format"
-
-    return df, mask_df
 
 # =========================
 # Email Cleaning / Validation
