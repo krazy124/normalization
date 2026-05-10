@@ -3,230 +3,6 @@ import pandas as pd
 import re
 
 
-# F1v1
-def create_or_update_transformation_mask(dataframe, mask_df=None):
-    if mask_df is None:
-        mask_df = pd.DataFrame(
-            "unprocessed",
-            index=dataframe.index,
-            columns=dataframe.columns
-        )
-    else:
-        mask_df = mask_df.copy()
-
-    mask_df = mask_df.reindex(index=dataframe.index)
-
-    for column_name in dataframe.columns:
-        if column_name not in mask_df.columns:
-            mask_df[column_name] = "unprocessed"
-
-        missing_mask = (
-            dataframe[column_name].isna()
-            | dataframe[column_name].astype(str).str.strip().eq("")
-        )
-
-        mask_df.loc[missing_mask, column_name] = "missing"
-
-    return mask_df[dataframe.columns]
-
-
-# F2v1
-def generate_dirty_data(record_count):
-    random.seed(42)
-
-    first_names = [
-        " John", "jane ", "ALICE", "bob", " Charlie ", "dAvE", " Eve",
-        "frank ", "GRACE", " hannah", "Isaac ", "JULIA", " kevin"
-    ]
-
-    last_names = [
-        " Smith", "johnson ", "WILLIAMS", "brown", " Jones ",
-        "Miller", " Davis", "garcia ", "RODRIGUEZ", "wilson "
-    ]
-
-    cities = [
-        " New York", "los angeles ", "CHICAGO", "houston",
-        " Phoenix ", "SAN ANTONIO ", " Dallas ", "austin"
-    ]
-
-    departments = [
-        " Sales", "engineering ", "HR", "marketing", " Finance ",
-        "operations", "IT ", "support"
-    ]
-
-    statuses = [
-        "Active", " inactive ", "PENDING", "active ", " Suspended", None
-    ]
-
-    notes = [
-        " good client", "Needs Follow Up ", "VIP", " late payer ",
-        "Returned item", None, "duplicate?", "  ", "Prefers email"
-    ]
-
-    dirty_numbers = [
-        "100", " 250 ", "$300", "N/A", "four hundred",
-        None, "500.00", " 75", "1,200", "??"
-    ]
-
-    dirty_dates = [
-        "2024-01-15", "01/22/2024", "March 5 2024",
-        "2024/04/18", "not a date", None, "13/13/2024",
-        "2024-07-32", " 2024-09-10 ", "02-28-2024"
-    ]
-
-    emails = [
-        "test@example.com", " USER@MAIL.COM ", "bademail@",
-        "none", None, "sample.user@gmail.com", "hello@site",
-        "foo@bar.com "
-    ]
-
-    scores = ["90", "85 ", " seventy", None, "100", "N/A", " 72"]
-
-    rows = []
-
-    for i in range(record_count):
-        row = {
-            "customer_id": random.choice([i + 1, i + 1, i, None]),
-            "full_name": (
-                f"{random.choice(first_names)} {random.choice(last_names)}"
-            ),
-            "email": random.choice(emails),
-            "city": random.choice(cities),
-            "department": random.choice(departments),
-            "status": random.choice(statuses),
-            "purchase_amount": random.choice(dirty_numbers),
-            "signup_date": random.choice(dirty_dates),
-            "notes": random.choice(notes),
-            "score": random.choice(scores),
-        }
-
-        rows.append(row)
-
-    if record_count > 25:
-        rows[10] = rows[5].copy()
-        rows[25] = rows[5].copy()
-
-    if record_count > 75:
-        rows[50] = rows[20].copy()
-        rows[75] = rows[20].copy()
-
-    return pd.DataFrame(rows)
-
-
-# F3v1
-def get_row_count(dataframe):
-    return len(dataframe)
-
-
-# F4v1
-def get_column_count(dataframe):
-    return len(dataframe.columns)
-
-
-# F5v1
-def count_duplicate_rows(dataframe):
-    return dataframe.duplicated().sum()
-
-
-# F6v1
-def count_total_missing_values(dataframe):
-    return dataframe.isna().sum().sum()
-
-
-# F7v1
-def count_rows_with_missing_values(dataframe):
-    return dataframe.isna().any(axis=1).sum()
-
-
-# F8v1
-def get_missing_percent_by_column(dataframe):
-    if len(dataframe) == 0:
-        return pd.Series(0, index=dataframe.columns)
-
-    return (dataframe.isna().sum() / len(dataframe)) * 100
-
-
-# F9v1
-def get_missing_row_percent(dataframe):
-    rows_with_missing = dataframe[dataframe.isna().any(axis=1)]
-
-    if len(dataframe) == 0:
-        return 0
-
-    return len(rows_with_missing) / len(dataframe) * 100
-
-
-# F10v1
-def get_data_health_summary(dataframe):
-    return {
-        "row_count": get_row_count(dataframe),
-        "column_count": get_column_count(dataframe),
-        "duplicate_count": count_duplicate_rows(dataframe),
-        "total_missing": count_total_missing_values(dataframe),
-        "rows_with_missing": count_rows_with_missing_values(dataframe),
-        "missing_by_column": get_missing_percent_by_column(dataframe),
-        "missing_row_percent": get_missing_row_percent(dataframe),
-    }
-
-
-# F11v1
-def get_column_health(dataframe, column_name):
-    column = dataframe[column_name]
-    total_rows = len(column)
-    non_missing_count = column.notna().sum()
-
-    if total_rows == 0:
-        return {
-            "Missing %": "0%",
-            "Unique Count": 0,
-            "Duplicate Count": 0,
-            "Best Detected Type": "Unknown",
-            "Valid Type %": "0%",
-            "Invalid / Unclean Count": 0,
-        }
-
-    missing_percent = column.isna().sum() / total_rows * 100
-    unique_count = column.nunique(dropna=True)
-    duplicate_count = column.duplicated().sum()
-
-    if non_missing_count == 0:
-        return {
-            "Missing %": f"{missing_percent:.0f}%",
-            "Unique Count": unique_count,
-            "Duplicate Count": duplicate_count,
-            "Best Detected Type": "Missing",
-            "Valid Type %": "0%",
-            "Invalid / Unclean Count": 0,
-        }
-
-    numeric_converted = pd.to_numeric(column, errors="coerce")
-    datetime_converted = pd.to_datetime(column, errors="coerce")
-
-    numeric_valid_count = numeric_converted.notna().sum()
-    datetime_valid_count = datetime_converted.notna().sum()
-
-    numeric_valid_percent = numeric_valid_count / non_missing_count * 100
-    datetime_valid_percent = datetime_valid_count / non_missing_count * 100
-
-    if numeric_valid_percent >= datetime_valid_percent:
-        best_detected_type = "Numeric"
-        valid_type_percent = numeric_valid_percent
-        invalid_unclean_count = non_missing_count - numeric_valid_count
-    else:
-        best_detected_type = "Datetime"
-        valid_type_percent = datetime_valid_percent
-        invalid_unclean_count = non_missing_count - datetime_valid_count
-
-    return {
-        "Missing %": f"{missing_percent:.0f}%",
-        "Unique Count": unique_count,
-        "Duplicate Count": duplicate_count,
-        "Best Detected Type": best_detected_type,
-        "Valid Type %": f"{valid_type_percent:.0f}%",
-        "Invalid / Unclean Count": invalid_unclean_count,
-    }
-
-
 class Transformation:
     @staticmethod
     def to_int_keep_failed(series):
@@ -372,6 +148,231 @@ class Transformation:
         return df
 
 
+# F1v1
+def create_or_update_transformation_mask(dataframe, mask_df=None):
+    if mask_df is None:
+        mask_df = pd.DataFrame(
+            "unprocessed",
+            index=dataframe.index,
+            columns=dataframe.columns
+        )
+    else:
+        mask_df = mask_df.copy()
+
+    mask_df = mask_df.reindex(index=dataframe.index)
+
+    for column_name in dataframe.columns:
+        if column_name not in mask_df.columns:
+            mask_df[column_name] = "unprocessed"
+
+        missing_mask = (
+            dataframe[column_name].isna()
+            | dataframe[column_name].astype(str).str.strip().eq("")
+        )
+
+        mask_df.loc[missing_mask, column_name] = "missing"
+
+    return mask_df[dataframe.columns]
+
+
+# F2v1
+def generate_dirty_data(record_count):
+    random.seed(42)
+
+    first_names = [
+        " John", "jane ", "ALICE", "bob", " Charlie ", "dAvE", " Eve",
+        "frank ", "GRACE", " hannah", "Isaac ", "JULIA", " kevin"
+    ]
+
+    last_names = [
+        " Smith", "johnson ", "WILLIAMS", "brown", " Jones ",
+        "Miller", " Davis", "garcia ", "RODRIGUEZ", "wilson "
+    ]
+
+    cities = [
+        " New York", "los angeles ", "CHICAGO", "houston",
+        " Phoenix ", "SAN ANTONIO ", " Dallas ", "austin"
+    ]
+
+    departments = [
+        " Sales", "engineering ", "HR", "marketing", " Finance ",
+        "operations", "IT ", "support"
+    ]
+
+    statuses = [
+        "Active", " inactive ", "PENDING", "active ", " Suspended", None
+    ]
+
+    notes = [
+        " good client", "Needs Follow Up ", "VIP", " late payer ",
+        "Returned item", None, "duplicate?", "  ", "Prefers email"
+    ]
+
+    dirty_numbers = [
+        "100", " 250 ", "$300", "N/A", "four hundred",
+        None, "500.00", " 75", "1,200", "??"
+    ]
+
+    dirty_dates = [
+        "2024-01-15", "01/22/2024", "March 5 2024",
+        "2024/04/18", "not a date", None, "13/13/2024",
+        "2024-07-32", " 2024-09-10 ", "02-28-2024"
+    ]
+
+    emails = [
+        "test@example.com", " USER@MAIL.COM ", "bademail@",
+        "none", None, "sample.user@gmail.com", "hello@site",
+        "foo@bar.com "
+    ]
+
+    scores = ["90", "85 ", " seventy", None, "100", "N/A", " 72"]
+
+    rows = []
+
+    for i in range(record_count):
+        row = {
+            "customer_id": random.choice([i + 1, i + 1, i, None]),
+            "full_name": (
+                f"{random.choice(first_names)} {random.choice(last_names)}"
+            ),
+            "email": random.choice(emails),
+            "city": random.choice(cities),
+            "department": random.choice(departments),
+            "status": random.choice(statuses),
+            "purchase_amount": random.choice(dirty_numbers),
+            "signup_date": random.choice(dirty_dates),
+            "notes": random.choice(notes),
+            "score": random.choice(scores),
+        }
+
+        rows.append(row)
+
+    if record_count > 25:
+        rows[10] = rows[5].copy()
+        rows[25] = rows[5].copy()
+
+    if record_count > 75:
+        rows[50] = rows[20].copy()
+        rows[75] = rows[20].copy()
+
+    return pd.DataFrame(rows)
+
+
+# =========================Diagnostics=========================
+# F3v1
+def get_row_count(dataframe):
+    return len(dataframe)
+
+
+# F4v1
+def get_column_count(dataframe):
+    return len(dataframe.columns)
+
+
+# F5v1
+def count_duplicate_rows(dataframe):
+    return dataframe.duplicated().sum()
+
+
+# F6v1
+def count_total_missing_values(dataframe):
+    return dataframe.isna().sum().sum()
+
+
+# F7v1
+def count_rows_with_missing_values(dataframe):
+    return dataframe.isna().any(axis=1).sum()
+
+
+# F8v1
+def get_missing_percent_by_column(dataframe):
+    if len(dataframe) == 0:
+        return pd.Series(0, index=dataframe.columns)
+
+    return (dataframe.isna().sum() / len(dataframe)) * 100
+
+
+# F9v1
+def get_missing_row_percent(dataframe):
+    rows_with_missing = dataframe[dataframe.isna().any(axis=1)]
+
+    if len(dataframe) == 0:
+        return 0
+
+    return len(rows_with_missing) / len(dataframe) * 100
+
+
+# F10v1
+def get_data_health_summary(dataframe):
+    return {
+        "row_count": get_row_count(dataframe),
+        "column_count": get_column_count(dataframe),
+        "duplicate_count": count_duplicate_rows(dataframe),
+        "total_missing": count_total_missing_values(dataframe),
+        "rows_with_missing": count_rows_with_missing_values(dataframe),
+        "missing_by_column": get_missing_percent_by_column(dataframe),
+        "missing_row_percent": get_missing_row_percent(dataframe),
+    }
+
+
+# F11v1
+def get_column_health(dataframe, column_name):
+    column = dataframe[column_name]
+    total_rows = len(column)
+    non_missing_count = column.notna().sum()
+
+    if total_rows == 0:
+        return {
+            "Missing %": "0%",
+            "Unique Count": 0,
+            "Duplicate Count": 0,
+            "Best Detected Type": "Unknown",
+            "Valid Type %": "0%",
+            "Invalid / Unclean Count": 0,
+        }
+
+    missing_percent = column.isna().sum() / total_rows * 100
+    unique_count = column.nunique(dropna=True)
+    duplicate_count = column.duplicated().sum()
+
+    if non_missing_count == 0:
+        return {
+            "Missing %": f"{missing_percent:.0f}%",
+            "Unique Count": unique_count,
+            "Duplicate Count": duplicate_count,
+            "Best Detected Type": "Missing",
+            "Valid Type %": "0%",
+            "Invalid / Unclean Count": 0,
+        }
+
+    numeric_converted = pd.to_numeric(column, errors="coerce")
+    datetime_converted = pd.to_datetime(column, errors="coerce")
+
+    numeric_valid_count = numeric_converted.notna().sum()
+    datetime_valid_count = datetime_converted.notna().sum()
+
+    numeric_valid_percent = numeric_valid_count / non_missing_count * 100
+    datetime_valid_percent = datetime_valid_count / non_missing_count * 100
+
+    if numeric_valid_percent >= datetime_valid_percent:
+        best_detected_type = "Numeric"
+        valid_type_percent = numeric_valid_percent
+        invalid_unclean_count = non_missing_count - numeric_valid_count
+    else:
+        best_detected_type = "Datetime"
+        valid_type_percent = datetime_valid_percent
+        invalid_unclean_count = non_missing_count - datetime_valid_count
+
+    return {
+        "Missing %": f"{missing_percent:.0f}%",
+        "Unique Count": unique_count,
+        "Duplicate Count": duplicate_count,
+        "Best Detected Type": best_detected_type,
+        "Valid Type %": f"{valid_type_percent:.0f}%",
+        "Invalid / Unclean Count": invalid_unclean_count,
+    }
+
+
 # F14v1
 def drop_duplicates(dataframe, mask_df=None):
     df = dataframe.copy()
@@ -461,7 +462,7 @@ def sort_transformation_preview(compare_df, original_column, preview_column):
     return sorted_df.drop(columns=["_sort_group"])
 
 
-# =========================Reports / Diagnostics=========================
+# =========================Column Reports Sections=========================
 # F29v1
 def return_transformation_mask(mask_df):
     return mask_df.copy()
@@ -501,10 +502,9 @@ def return_invalid_format_report(dataframe, mask_df):
 
     return pd.DataFrame(report_rows)
 
-# =========================Invalid Format Reason Helpers=========================
+
+# =========================Invalid Format Section=========================
 # F33v1
-
-
 def get_invalid_format_reason(column_name, value):
     column_lower = column_name.lower()
 
@@ -628,11 +628,9 @@ def get_currency_invalid_reason(value):
 
     return "Invalid currency format"
 
+
 # =========================Transformation Code Generation=========================
-
 # F38v1
-
-
 def generate_transformation_code(transformation_steps):
     code_lines = [
         "import pandas as pd",
