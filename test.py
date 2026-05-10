@@ -236,21 +236,24 @@ class Transformation:
         original = series.copy()
         cleaned = original.astype("string").str.strip()
         converted = pd.to_numeric(cleaned, errors="coerce")
-        integer_mask = converted.notna() & (converted % 1 == 0)
+        success_mask = converted.notna() & (converted % 1 == 0)
 
         result = original.astype("object").copy()
-        result.loc[integer_mask] = converted.loc[integer_mask].astype("Int64")
-        return result
+        result.loc[success_mask] = converted.loc[success_mask].astype("Int64")
+
+        return result, success_mask
 
     @staticmethod
     def common_date_patterns(series):
         original = series.copy()
         cleaned = original.astype("string").str.strip()
         converted = pd.to_datetime(cleaned, errors="coerce")
+        success_mask = converted.notna()
 
         result = original.astype("object").copy()
-        result.loc[converted.notna()] = converted.loc[converted.notna()]
-        return result
+        result.loc[success_mask] = converted.loc[success_mask]
+
+        return result, success_mask
 
     @staticmethod
     def clean_validate_email(series):
@@ -268,12 +271,11 @@ class Transformation:
         junk_values = ["", "na", "n/a", "none", "null", "nan"]
         cleaned = cleaned.mask(cleaned.isin(junk_values), pd.NA)
 
-        valid_email_mask = cleaned.str.match(email_pattern, na=False)
+        success_mask = cleaned.str.match(email_pattern, na=False)
 
-        return cleaned.where(
-            valid_email_mask | cleaned.isna(),
-            original
-        )
+        result = cleaned.where(success_mask | cleaned.isna(), original)
+
+        return result, success_mask
 
     @staticmethod
     def currency_to_numeric(series):
@@ -287,13 +289,43 @@ class Transformation:
         )
 
         converted = pd.to_numeric(cleaned, errors="coerce")
+        success_mask = converted.notna()
 
         result = original.astype("object").copy()
-        result.loc[converted.notna()] = converted.loc[converted.notna()]
-        return result
+        result.loc[success_mask] = converted.loc[success_mask]
 
+        return result, success_mask
+
+    @staticmethod
+    def to_titlecase(series):
+        result = series.map(
+            lambda value: value.title() if isinstance(value, str) else value
+        )
+
+        success_mask = pd.Series(True, index=series.index)
+
+        return result, success_mask
+
+    @staticmethod
+    def to_lowercase(series):
+        result = series.map(
+            lambda value: value.lower() if isinstance(value, str) else value
+        )
+
+        success_mask = pd.Series(True, index=series.index)
+
+        return result, success_mask
+
+    @staticmethod
+    def fill_missing_unknown(series):
+        result = series.fillna("Unknown")
+        success_mask = pd.Series(True, index=series.index)
+
+        return result, success_mask
 
 # F12v1
+
+
 def strip_whitespace(dataframe, mask_df=None):
     df = dataframe.copy()
     mask_df = create_or_update_transformation_mask(df, mask_df)
@@ -577,52 +609,27 @@ def convert_common_date_patterns(dataframe, column_name, mask_df=None):
 # =========================
 
 
-# F27.1v2
+# F27.1v4
 def run_column_transformation(dataframe, column_name, transformation_function, mask_df=None):
     df = dataframe.copy()
     mask_df = create_or_update_transformation_mask(df, mask_df)
 
     original = df[column_name].copy()
-    transformed = transformation_function(original)
+    transformed, success_mask = transformation_function(original)
 
     df[column_name] = transformed
 
     missing_mask = original.isna() | original.astype(str).str.strip().eq("")
+    changed_mask = original.astype(str) != transformed.astype(str)
 
-    cleaned_mask = (
-        ~missing_mask
-        & (original.astype(str) != transformed.astype(str))
-    )
-
-    valid_mask = ~missing_mask & ~cleaned_mask
+    invalid_mask = ~missing_mask & ~success_mask
+    cleaned_mask = ~missing_mask & success_mask & changed_mask
+    valid_mask = ~missing_mask & success_mask & ~changed_mask
 
     mask_df.loc[missing_mask, column_name] = "missing"
     mask_df.loc[valid_mask, column_name] = "valid"
     mask_df.loc[cleaned_mask, column_name] = "cleaned"
-
-    return df, mask_df
-
-
-# F27.1v1
-def run_string_transformation(dataframe, column_name, transformation_function, mask_df=None):
-
-    df = dataframe.copy()
-    mask_df = create_or_update_transformation_mask(df, mask_df)
-    original = df[column_name].copy()
-
-    if (original.dtype == "object" or pd.api.types.is_string_dtype(original)):
-
-        transformed = original.map(lambda value: transformation_function(
-            value)if isinstance(value, str)else value)
-        df[column_name] = transformed
-        missing_mask = original.isna()
-        cleaned_mask = (original.notna() & original.map(lambda value: isinstance(
-            value, str)) & (original.astype(str) != transformed.astype(str)))
-
-        valid_mask = (original.notna() & ~cleaned_mask)
-        mask_df.loc[missing_mask, column_name] = "missing"
-        mask_df.loc[valid_mask, column_name] = "valid"
-        mask_df.loc[cleaned_mask, column_name] = "cleaned"
+    mask_df.loc[invalid_mask, column_name] = "invalid format"
 
     return df, mask_df
 
@@ -1195,10 +1202,13 @@ with st.container(border=True):
         st.write("")
 
         if st.button("Convert to Float", key="col_convert_numeric", use_container_width=True):
-            st.session_state.preview_df, st.session_state.preview_mask =
-            run_column_transformation(dataframe=st.session_state.preview_df, column_name=selected_column, transformation_function=lambda series: pd.to_numeric(series, errors="coerce").
-                                      where(pd.to_numeric(series, errors="coerce").
-                                            notna(), series), mask_df=st.session_state.preview_mask)
+            st.session_state.preview_df, st.session_state.preview_mask = run_column_transformation(
+                dataframe=st.session_state.preview_df,
+                column_name=selected_column,
+                transformation_function=lambda series: pd.to_numeric(series, errors="coerce").where(
+                    pd.to_numeric(series, errors="coerce").notna(), series),
+                mask_df=st.session_state.preview_mask
+            )
             add_transformation_step("convert_col_to_numeric", selected_column)
 
         if st.button("Convert to Int", key="col_convert_int", use_container_width=True):
