@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 import base64
+from io import StringIO
 from pathlib import Path
 
 from transformations import *
@@ -15,6 +16,47 @@ def add_transformation_step(function_name, column_name):
         "function": function_name,
         "column": column_name
     })
+
+# F38v1
+
+
+@st.dialog("Upload CSV")
+def open_csv_upload_dialog():
+    uploaded_csv = st.file_uploader(
+        "Choose a CSV file",
+        type=["csv"],
+        key="csv_file_uploader"
+    )
+
+    pasted_csv = st.text_area(
+        "Or paste CSV text here",
+        height=200,
+        key="csv_text_input"
+    )
+
+    import_col, cancel_col = st.columns(2)
+
+    with import_col:
+        if st.button("Import CSV", use_container_width=True):
+            if uploaded_csv is not None:
+                uploaded_df = pd.read_csv(uploaded_csv)
+            elif pasted_csv.strip() != "":
+                uploaded_df = pd.read_csv(StringIO(pasted_csv))
+            else:
+                st.warning("Upload a CSV file or paste CSV text first.")
+                return
+
+            st.session_state.dirty_df = uploaded_df
+            st.session_state.dirty_mask = create_or_update_transformation_mask(
+                uploaded_df)
+            st.session_state.preview_df = uploaded_df.copy()
+            st.session_state.preview_mask = st.session_state.dirty_mask.copy()
+            st.session_state.transformation_steps = []
+            st.rerun()
+
+    with cancel_col:
+        if st.button("Cancel", use_container_width=True):
+            st.rerun()
 
 
 # =========================S1v1 - Streamlit Page Setup=========================
@@ -58,7 +100,11 @@ with st.container(border=True):
 
     with left_panel:
 
-        # S4.2v1 - Record Count Input
+        # S4.2v2 - CSV Import Button
+
+        if st.button("Upload CSV", use_container_width=True):
+            open_csv_upload_dialog()
+
         record_count = st.number_input(
             "Enter number of records",
             min_value=1,
@@ -349,12 +395,13 @@ with st.container(border=True):
             compare_df = compare_df.drop(columns=["_sort_group"])
 
         else:
+            # S6.6v4 - Original vs Preview Compare Table
             compare_df = sort_transformation_preview(
                 compare_df,
                 original_column,
-                preview_column
+                preview_column,
+                st.session_state.preview_mask[selected_column]
             )
-
         st.dataframe(compare_df, use_container_width=True, height=550)
 
     with health_col:

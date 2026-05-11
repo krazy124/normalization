@@ -427,9 +427,30 @@ def run_column_transformation(dataframe, column_name, transformation_function, m
     return df, mask_df
 
 
-# F15v1
-def sort_transformation_preview(compare_df, original_column, preview_column):
+# F15v2
+def sort_transformation_preview(compare_df, original_column, preview_column, mask_series=None):
     sorted_df = compare_df.copy()
+
+    if mask_series is not None:
+        sorted_df["_mask_status"] = mask_series.values
+
+        sort_order = {
+            "invalid format": 0,
+            "cleaned": 1,
+            "valid": 2,
+            "missing": 3,
+            "unprocessed": 4
+        }
+
+        sorted_df["_sort_group"] = sorted_df["_mask_status"].map(
+            sort_order).fillna(5)
+
+        sorted_df = sorted_df.sort_values(
+            by="_sort_group",
+            ascending=True
+        )
+
+        return sorted_df.drop(columns=["_sort_group", "_mask_status"])
 
     def get_sort_group(row):
         original_value = row[original_column]
@@ -457,9 +478,10 @@ def sort_transformation_preview(compare_df, original_column, preview_column):
 
     return sorted_df.drop(columns=["_sort_group"])
 
-
 # =========================Column Reports Sections=========================
 # F16v1
+
+
 def return_transformation_mask(mask_df):
     return mask_df.copy()
 
