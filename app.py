@@ -132,8 +132,12 @@ st.markdown(f"""
 
 
 # =========================S3v1 - Main Title=========================
-st.title("Function Test Page")
+# =========================S3v2 - Main Title=========================
+st.title("Data Normalization Assistant")
 
+st.subheader(
+    "Inspect, clean, validate, and normalize messy datasets."
+)
 
 # =========================S4v2 - Dirty Data Display Section=========================
 st.write("### Data Frame Transformation Section")
