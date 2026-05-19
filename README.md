@@ -159,26 +159,23 @@ Contains:
 
 ## Main Dashboard
 
-![alt text](image-1.png)
-
+![alt text](screenshots/image-1.png)
 ---
 
 ## Column Transformation Preview
 
-![alt text](image-3.png)
 
+![alt text](screenshots/image-3.png)
 ---
 
 ## Invalid Format Report
 
-![alt text](image.png)
-
+![alt text](screenshots/image.png)
 
 
 ## Export Reports
 
-![alt text](image-2.png)
-
+![alt text](screenshots/image-2.png)
 ---
 
 # Example Workflow
