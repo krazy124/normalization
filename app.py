@@ -106,7 +106,7 @@ def open_csv_upload_dialog():
 
 # =========================S1v1 - Streamlit Page Setup=========================
 st.set_page_config(
-    page_title="Function Test Page",
+    page_title="Data Normalization Assistant",
     page_icon="🧪",
     layout="wide"
 )
