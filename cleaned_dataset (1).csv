@@ -1,0 +1,26 @@
+customer_id,full_name,email,city,department,status,purchase_amount,signup_date,notes,score
+1.0,John  Jones,,Houston,Hr,,250.0,2024-09-10 00:00:00,needs follow up,100
+,John  Smith,user@mail.com,Houston,Marketing,suspended,??,2024-01-15 00:00:00,prefers email,85
+,Bob Garcia,,New York,Hr,,500.0,,returned item,85
+4.0,Kevin Miller,user@mail.com,Los Angeles,It,active,,,returned item,72
+5.0,Julia Garcia,user@mail.com,Dallas,Engineering,suspended,four hundred,2024-02-28 00:00:00,,100
+6.0,Julia Johnson,test@example.com,Houston,Finance,active,N/A,2024-01-22 00:00:00,duplicate?,seventy
+,Isaac  Miller,bademail@,San Antonio,Operations,inactive,four hundred,2024-01-22 00:00:00,vip,100
+8.0,Alice Garcia,hello@site,Phoenix,Marketing,,,2024-01-15 00:00:00,late payer,72
+9.0,Kevin Miller,hello@site,Phoenix,Engineering,inactive,??,,late payer,N/A
+,Eve Garcia,bademail@,Phoenix,Hr,inactive,1200.0,2024-09-10 00:00:00,returned item,N/A
+,Hannah  Davis,sample.user@gmail.com,Houston,Hr,suspended,75.0,2024-01-22 00:00:00,good client,72
+12.0,Alice Williams,hello@site,Los Angeles,It,active,??,2024-07-32,prefers email,seventy
+13.0,Isaac  Johnson,,San Antonio,Engineering,pending,500.0,2024-03-05 00:00:00,,90
+13.0,Grace Williams,user@mail.com,Phoenix,Marketing,inactive,,2024-03-05 00:00:00,prefers email,72
+15.0,Hannah Miller,foo@bar.com,New York,Engineering,pending,four hundred,2024-04-18 00:00:00,good client,85
+16.0,Jane  Garcia,user@mail.com,Chicago,Hr,,75.0,2024-09-10 00:00:00,vip,seventy
+,Bob Rodriguez,,Phoenix,It,,,2024-07-32,prefers email,
+18.0,Bob Brown,user@mail.com,San Antonio,Sales,suspended,1200.0,2024-04-18 00:00:00,late payer,90
+19.0,Julia  Smith,,Los Angeles,Sales,pending,250.0,2024-09-10 00:00:00,late payer,seventy
+,Bob Rodriguez,bademail@,Austin,Marketing,active,500.0,2024-04-18 00:00:00,needs follow up,90
+,Dave  Davis,hello@site,Austin,Sales,,250.0,2024-01-15 00:00:00,duplicate?,N/A
+21.0,Kevin Johnson,,Houston,Marketing,suspended,75.0,2024-03-05 00:00:00,duplicate?,85
+22.0,Frank  Brown,user@mail.com,Austin,Engineering,active,1200.0,2024-01-15 00:00:00,needs follow up,72
+24.0,Alice  Davis,foo@bar.com,Austin,Marketing,active,100.0,2024-03-05 00:00:00,duplicate?,90
+,Charlie  Garcia,,Dallas,Support,inactive,N/A,not a date,late payer,90

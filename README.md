@@ -1,80 +1,274 @@
-# normalization
-Interactive data profiling and normalization tool that scans messy datasets, highlights anomalies, recommends transformations, and helps users clean data with confidence.
+# Data Normalization Assistant
 
-Data Normalization Assistant
+A Streamlit-based data cleaning and normalization tool designed to simulate real-world data engineering workflows.
 
-Interactive data profiling and normalization tool that scans messy datasets, highlights anomalies, recommends transformations, and helps users clean data with confidence.
+The application allows users to upload messy datasets, inspect data quality issues, preview transformations before applying them, generate validation reports, and export reusable transformation code.
 
-Overview
+---
 
-Data Normalization Assistant is a Python-based data cleaning and profiling tool built to help users quickly assess dataset quality and apply common normalization steps through an interactive interface.
+# Overview
 
-The app is designed to:
+Data engineers and analysts frequently work with inconsistent, incomplete, and poorly formatted datasets.
 
-profile uploaded datasets
-identify anomalies and data quality issues
-recommend common cleaning actions
-apply transformations interactively
-compare changes before and after transformation
-export cleaned data for downstream use
+This project was built to simulate a realistic data-cleaning workflow by providing:
 
-This project was built as both:
+- Dataset health diagnostics
+- Transformation previews
+- Non-destructive cleaning operations
+- Invalid format reporting
+- Transformation tracking
+- Exportable cleaning pipelines
 
-a practical tool for daily data work
-a portfolio project demonstrating data engineering workflow design, data quality validation, and transformation logic
-Features
-Upload CSV datasets
-Preview raw data
-Scan columns for data quality issues
-Detect missing values, duplicates, and invalid types
-Highlight anomalies and suspicious values
-Recommend transformation options by column
-Compare before and after transformations
-Export cleaned datasets
-Track applied transformations
-Core Data Cleaning Functions
-Trim whitespace
-Standardize text casing
-Parse and normalize dates
-Handle missing values
-Detect and remove duplicates
-Validate data types
-Detect outliers
-Standardize categorical values
-Normalize numeric ranges
-Encode categorical columns
-Tech Stack
-Python
-Pandas
-Streamlit
-Plotly / Matplotlib
-ydata-profiling
+The goal of this project is not only to clean data, but also to demonstrate practical workflow design, traceability, and reusable transformation logic.
 
-Planned:
+---
 
-AWS deployment
-transformation pipeline export
-reusable cleaning profiles
-How It Works
-Upload a dataset
-Profile the data
-Review detected issues
-Apply recommended transformations
-Compare before and after results
-Export cleaned data
-Project Goals
+# Features
 
-This project focuses on building a practical, explainable data-cleaning workflow that helps users understand not only what should be changed in a dataset, but why.
+## Dataset Import & Generation
 
-The goal is to make data normalization:
+- Upload CSV files
+- Paste CSV text directly into the app
+- Generate synthetic dirty datasets for testing
 
-interactive
-explainable
-reusable
-easier to trust
-Future Improvements
-Export transformations as reusable Python pipeline code
-Add user-defined transformation rules
-Add batch processing support
-Add advanced anomaly scoring
-Deploy public web version
+---
+
+## Data Cleaning Transformations
+
+### DataFrame Transformations
+
+- Strip whitespace
+- Convert text to lowercase
+- Drop duplicate rows
+
+### Column Transformations
+
+- Convert to float
+- Convert to integer
+- Convert to datetime
+- Convert currency values
+- Clean and validate emails
+- Fill missing values
+- Convert to title case
+- Convert to lowercase
+
+---
+
+## Transformation Preview System
+
+Preview transformations before applying them to the dataset.
+
+The preview system allows users to:
+
+- Compare original vs transformed values
+- Track cleaned values
+- Identify invalid formats
+- Preserve failed conversions instead of destroying data
+
+---
+
+## Data Health Dashboard
+
+Built-in diagnostics provide visibility into dataset quality:
+
+- Row count
+- Duplicate count
+- Rows with missing values
+- Missing percentage by column
+- Column-level health analysis
+- Best detected column type
+- Invalid / unclean value counts
+
+---
+
+## Transformation Mask System
+
+The application tracks transformation states using a mask system.
+
+Each value is categorized as:
+
+- valid
+- cleaned
+- missing
+- invalid format
+- unprocessed
+
+This provides traceability throughout the cleaning workflow.
+
+---
+
+## Invalid Format Reporting
+
+Generate detailed invalid format reports for problematic values.
+
+Examples include:
+
+- Invalid emails
+- Invalid dates
+- Currency formatting issues
+- Missing symbols
+- Unrecognized patterns
+
+---
+
+## Transformation Code Generation
+
+The app can generate reusable pandas transformation code based on the cleaning steps selected in the UI.
+
+This simulates how transformation workflows may later be integrated into production ETL pipelines.
+
+---
+
+# Project Architecture
+
+## app.py
+
+Contains:
+
+- Streamlit UI
+- Workflow orchestration
+- Session state handling
+- User interactions
+- Export controls
+
+---
+
+## transformations.py
+
+Contains:
+
+- Transformation engine
+- Data diagnostics
+- Validation logic
+- Transformation masks
+- Reporting utilities
+- Code generation
+- Dirty data generation
+
+---
+
+# Tech Stack
+
+- Python
+- Pandas
+- Streamlit
+
+---
+
+# Screenshots
+
+## Main Dashboard
+
+![alt text](image-1.png)
+
+---
+
+## Column Transformation Preview
+
+![alt text](image-3.png)
+
+---
+
+## Invalid Format Report
+
+![alt text](image.png)
+
+
+
+## Export Reports
+
+![alt text](image-2.png)
+
+---
+
+# Example Workflow
+
+1. Upload a messy CSV dataset
+2. Inspect dataset health metrics
+3. Select a column to transform
+4. Preview transformations
+5. Review invalid format reports
+6. Apply changes
+7. Export cleaned dataset
+8. Export reusable transformation code
+
+---
+
+# Design Goals
+
+This project was designed around several principles:
+
+- Preserve failed conversions whenever possible
+- Avoid destructive transformations
+- Keep workflows explainable and traceable
+- Simulate realistic data engineering cleaning workflows
+- Separate UI logic from transformation logic
+- Generate reusable transformation pipelines
+
+---
+
+# Future Improvements
+
+Potential future enhancements include:
+
+- Additional transformation types
+- User-defined custom transformations
+- Data normalization pipelines
+- Multi-file workflow support
+- Database integration
+- AWS S3 integration
+- Transformation history/versioning
+- Automated schema detection
+- Interactive visualization dashboards
+
+---
+
+# Running the Project
+
+## Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+## Launch Streamlit App
+
+```bash
+streamlit run app.py
+```
+
+---
+
+# Repository Structure
+
+```text
+normalization/
+│
+├── app.py
+├── transformations.py
+├── requirements.txt
+├── README.md
+├── .gitignore
+│
+├── assets/
+├── docs/
+├── examples/
+├── screenshots/
+│
+└── old_app_reference.py
+```
+
+---
+
+# Portfolio Notes
+
+This project was built as part of a broader effort to develop practical data engineering skills involving:
+
+- Data cleaning
+- Validation workflows
+- Transformation pipelines
+- Reporting systems
+- Modular Python architecture
+- Real-world data quality handling
+
+The focus of the project is workflow design and practical usability rather than simple one-off scripting examples.
