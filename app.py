@@ -131,7 +131,6 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# =========================S3v1 - Main Title=========================
 # =========================S3v2 - Main Title=========================
 st.title("Data Normalization Assistant")
 
